@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1085935963960",
+    "project_id": "amora-retrox",
+    "storage_bucket": "amora-retrox.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1085935963960:android:de228d2350ea80d3c7bbcd",
+        "android_client_info": {
+          "package_name": "com.retroxinteractive.amora"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1085935963960-to95ooc00oi81urpvjgmnvlmrujok6ik.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.retroxinteractive.amora",
+            "certificate_hash": "3e6b43278e9323360ed036513fe4e6215d1616bc"
+          }
+        },
+        {
+          "client_id": "1085935963960-19jtspurmk170kjtu4jpqie61bel40i9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA2emOUfQ98L2TbIXcGVfGTawoaiL2K-lo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1085935963960-19jtspurmk170kjtu4jpqie61bel40i9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

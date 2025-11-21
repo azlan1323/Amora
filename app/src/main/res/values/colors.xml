@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="amora_bg">#101010</color>
+    <color name="amora_card">#181818</color>
+    <color name="amora_accent">#D6FF3F</color>
+    <color name="amora_text_primary">#FFFFFFFF</color>
+    <color name="amora_text_secondary">#99FFFFFF</color>
+    <color name="amora_stroke">#33FFFFFF</color>
+    <!-- Main palette -->
+    <color name="neon_yellow">#D4FF3A</color>
+    <color name="bg_grey_top">#808080</color>
+    <color name="bg_dark_bottom">#050505</color>
+
+    <!-- U-shape + text -->
+    <color name="text_light">#E1E1E1</color>
+    <color name="bottom_overlay">#CC000000</color>
+
+    <!-- Overall background grey -->
+    <color name="bg_grey_main">#80868F</color>
+
+    <!-- App title color (slightly darker than U) -->
+    <color name="title_dark">#222222</color>
+
+    <!-- Pill / U grey (slightly darker so it stands out) -->
+    <color name="u_grey">#6E7278</color>
+</resources>
