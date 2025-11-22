@@ -12,13 +12,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Amora">
         <activity
-            android:name=".ProfileDetailsActivity"
+            android:name=".SplashActivity"
             android:exported="false" />
         <activity
             android:name=".TempActivity"
             android:exported="false" />
         <activity
-            android:name=".OnboardingActivity"
+            android:name=".ProfileDetailsActivity"
             android:exported="false" />
         <activity
             android:name=".HomeActivity"
@@ -27,7 +27,7 @@
             android:name=".SignInActivity"
             android:exported="false" />
         <activity
-            android:name=".SplashActivity"
+            android:name=".OnboardingActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
