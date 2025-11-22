@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Amora</string>
+    <string name="app_name">amora</string>
     <string name="signIn_text">Sign in to continue</string>
     <string name="continue_with_google_text">Continue with Google</string>
     <string name="terms_condition_text"><![CDATA[By continuing you agree to Amora’s Terms & Privacy Policy.]]></string>

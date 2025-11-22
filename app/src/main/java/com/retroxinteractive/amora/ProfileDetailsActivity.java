@@ -98,7 +98,6 @@ public class ProfileDetailsActivity extends AppCompatActivity {
         imgProfile.setOnClickListener(v ->
                 imagePickerLauncher.launch("image/*")
         );
-
         btnSave.setOnClickListener(v -> saveProfile());
     }
 
@@ -258,7 +257,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                 .addOnSuccessListener(unused -> {
                     Toast.makeText(ProfileDetailsActivity.this,
                             "Profile saved!", Toast.LENGTH_SHORT).show();
-                    goToTemp();
+                    goToMainActivity();
                 })
                 .addOnFailureListener(e -> {
                     btnSave.setEnabled(true);
@@ -268,8 +267,8 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                 });
     }
 
-    private void goToTemp() {
-        Intent intent = new Intent(ProfileDetailsActivity.this, TempActivity.class);
+    private void goToMainActivity() {
+        Intent intent = new Intent(ProfileDetailsActivity.this, MainActivity.class);
         startActivity(intent);
         finish();
     }

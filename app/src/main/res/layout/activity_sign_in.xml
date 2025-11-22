@@ -12,10 +12,10 @@
     <!-- App logo / icon (keep space as-is) -->
     <ImageView
         android:id="@+id/imgLogo"
-        android:layout_width="72dp"
-        android:layout_height="72dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
         android:contentDescription="@string/app_name"
-        android:src="@drawable/ic_launcher_background"
+        android:src="@drawable/vector"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -33,7 +33,7 @@
         app:layout_constraintTop_toBottomOf="@id/imgLogo"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="10dp" />
 
     <!-- Subtitle / tagline -->
     <TextView
@@ -101,7 +101,8 @@
                 app:iconPadding="12dp"
                 app:iconGravity="textStart"
                 android:backgroundTint="@color/amora_accent"
-                style="@style/Widget.MaterialComponents.Button" />
+                style="@style/Widget.MaterialComponents.Button"
+                tools:ignore="VisualLintButtonSize" />
 
             <!-- Progress bar while signing in -->
             <ProgressBar

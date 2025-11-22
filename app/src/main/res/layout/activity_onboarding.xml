@@ -122,13 +122,12 @@
 
     <!-- Button background PNG -->
     <ImageView
-        android:id="@+id/button_bg"
+        android:id="@+id/ivGetStarted"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:src="@drawable/buttoncontainer"
         android:scaleType="fitXY"
         tools:ignore="ContentDescription" />
-    <!-- tools:ignore="ContentDescription" /> -->
 
     <!-- Text inside the button -->
     <TextView

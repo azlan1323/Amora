@@ -148,11 +148,12 @@
                 android:id="@+id/icon_profile"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
+                android:layout_marginStart="32dp"
                 android:src="@drawable/ic_nav_profile"
-                app:layout_constraintStart_toEndOf="@id/icon_chat"
-                app:layout_constraintTop_toTopOf="parent"
                 app:layout_constraintBottom_toBottomOf="parent"
-                android:layout_marginStart="32dp" />
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/icon_chat"
+                app:layout_constraintTop_toTopOf="parent" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
 
