@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Amora">
         <activity
-            android:name=".SplashActivity"
+            android:name=".OnboardingActivity"
             android:exported="false" />
         <activity
             android:name=".TempActivity"
@@ -27,7 +27,7 @@
             android:name=".SignInActivity"
             android:exported="false" />
         <activity
-            android:name=".OnboardingActivity"
+            android:name=".SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

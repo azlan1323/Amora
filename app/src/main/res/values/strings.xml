@@ -6,4 +6,5 @@
     <string name="app_description_text">Find your match with Amora</string>
     <string name="default_web_client_id" translatable="false">1085935963960-19jtspurmk170kjtu4jpqie61bel40i9.apps.googleusercontent.com</string>
     <string name="on_boarding_activity_description">On Boarding Activity Design</string>
+    <string name="get_started_text">Get Started</string>
 </resources>
