@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_profile_card"
+    android:layout_width="match_parent"
+    android:layout_height="500dp"
+    android:padding="12dp">
+
+    <!-- ========== OUTER BOX (blue) background ========== -->
+
+    <!-- outer PNG -->
+    <ImageView
+        android:id="@+id/img_outer_background"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/bg_profile_card"
+        android:scaleType="fitXY" />
+
+    <!-- ========== INNER BOX (red) ========== -->
+    <LinearLayout
+        android:id="@+id/layout_inner_box"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_margin="16dp"
+        android:background="@drawable/bg_inner_profile_container"
+        android:orientation="vertical"
+        android:padding="14dp">
+
+        <!-- TOP: picture + distance + match pills -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <!-- profile picture (white/grey area) -->
+            <ImageView
+                android:id="@+id/img_profile"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:adjustViewBounds="true" />
+
+            <!-- distance pill (top-left) -->
+            <LinearLayout
+                android:id="@+id/layout_distance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:layout_gravity="top|start"
+                android:orientation="horizontal"
+                android:paddingStart="8dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:gravity="center_vertical"
+                android:background="@drawable/distance_container">
+
+                <ImageView
+                    android:id="@+id/img_distance_icon"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_distance" />
+
+                <TextView
+                    android:id="@+id/tv_distance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="3.2 km"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/white" />
+            </LinearLayout>
+
+            <!-- match % pill (top-right) -->
+            <LinearLayout
+                android:id="@+id/layout_match"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="12dp"
+                android:layout_gravity="top|end"
+                android:orientation="horizontal"
+                android:paddingStart="8dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_yellow">
+
+                <ImageView
+                    android:id="@+id/img_match_icon"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_heart" />
+
+                <TextView
+                    android:id="@+id/tv_match_percent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="98%"
+                    android:textSize="12sp"
+                    android:textColor="@android:color/white" />
+            </LinearLayout>
+
+        </FrameLayout>
+
+        <!-- spacing between picture and text -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="8dp" />
+
+        <!-- Name -->
+        <TextView
+            android:id="@+id/tv_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Jennifer Coppen"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white" />
+
+        <!-- Bio -->
+        <TextView
+            android:id="@+id/tv_bio"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="I’m a passionate individual with a love for exploring new cultures and cuisines."
+            android:textSize="13sp"
+            android:textColor="@android:color/white"
+            android:maxLines="3"
+            android:ellipsize="end" />
+
+        <!-- spacing before interests -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="8dp" />
+
+        <!-- Interests row -->
+        <LinearLayout
+            android:id="@+id/layout_interests"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/chip_interest_1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/interest_container"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:text="Modeling"
+                android:textSize="11sp"
+                android:textColor="@android:color/white" />
+
+            <TextView
+                android:id="@+id/chip_interest_2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:background="@drawable/interest_container"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:text="Hiking"
+                android:textSize="11sp"
+                android:textColor="@android:color/white" />
+
+            <TextView
+                android:id="@+id/chip_interest_3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/interest_container"
+                android:paddingLeft="10dp"
+                android:paddingRight="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:text="Photography"
+                android:textSize="11sp"
+                android:textColor="@android:color/white" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- ========== OUTER BOX BOTTOM BUTTONS (Correct Position) ========== -->
+    <LinearLayout
+        android:id="@+id/bottom_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_gravity="bottom"
+        android:paddingBottom="24dp"
+        android:paddingTop="8dp">
+
+        <!-- Like Button -->
+        <ImageView
+            android:id="@+id/btn_like"
+            android:layout_width="125dp"
+            android:layout_height="125dp"
+            android:layout_marginEnd="32dp"
+            android:src="@drawable/btn_heart"
+            android:adjustViewBounds="true"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <!-- Chat Button -->
+        <ImageView
+            android:id="@+id/btn_chat"
+            android:layout_width="125dp"
+            android:layout_height="125dp"
+            android:src="@drawable/btn_chat"
+            android:adjustViewBounds="true"
+            android:clickable="true"
+            android:focusable="true" />
+
+    </LinearLayout>
+
+</FrameLayout>
