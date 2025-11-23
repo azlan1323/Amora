@@ -9,9 +9,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import android.content.Intent;
-import android.os.Bundle;
 import android.os.CancellationSignal;
-import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ProgressBar;
@@ -19,7 +17,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.credentials.Credential;
 import androidx.credentials.CredentialManager;
@@ -81,9 +78,7 @@ public class SignInActivity extends AppCompatActivity {
 
         buildGoogleSignInRequest();
 
-        btnGoogleSignIn.setOnClickListener(v -> {
-            startGoogleSignIn();
-        });
+        btnGoogleSignIn.setOnClickListener(v -> startGoogleSignIn());
     }
 
     /**
@@ -112,7 +107,7 @@ public class SignInActivity extends AppCompatActivity {
                 /* request  = */ getCredentialRequest,
                 /* cancellationSignal = */ new CancellationSignal(),
                 /* executor = */ ContextCompat.getMainExecutor(this),
-                /* callback = */ new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
+                /* callback = */ new CredentialManagerCallback<>() {
                     @Override
                     public void onResult(@NonNull GetCredentialResponse result) {
                         progressBar.setVisibility(View.GONE);

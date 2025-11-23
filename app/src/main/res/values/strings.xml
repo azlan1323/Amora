@@ -7,4 +7,6 @@
     <string name="default_web_client_id" translatable="false">1085935963960-19jtspurmk170kjtu4jpqie61bel40i9.apps.googleusercontent.com</string>
     <string name="on_boarding_activity_description">On Boarding Activity Design</string>
     <string name="get_started_text">Get Started</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
