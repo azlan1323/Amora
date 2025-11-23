@@ -147,8 +147,9 @@
     android:layout_marginTop="6dp"
     android:background="@android:color/white"
     app:layout_constraintTop_toBottomOf="@id/layout_tabs"
-    app:layout_constraintStart_toStartOf="@id/tab_for_you"
-    app:layout_constraintEnd_toEndOf="@id/tab_for_you" />
+    app:layout_constraintBottom_toTopOf="@id/divider_tabs"
+    app:layout_constraintLeft_toLeftOf="@id/home_root"
+    app:layout_constraintRight_toRightOf="@id/home_root"/>
 
 <!-- Full-width thin line under tabs -->
 <View
