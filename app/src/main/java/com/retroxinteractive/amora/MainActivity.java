@@ -69,7 +69,8 @@ public class MainActivity extends AppCompatActivity {
                 fragment = new ChatFragment();
                 break;
             case PROFILE:
-                fragment = ProfileFragment.newInstance(true); // opened from main profile icon
+                // opened from main profile icon
+                fragment = ProfileFragment.newInstance(true);
                 break;
             case HOME:
             default:
@@ -77,20 +78,12 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
 
-        // replace fragment
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.main_fragment_container, fragment)
                 .commit();
 
-            // show / hide bottom nav
-        if (bottomNavBar != null) {
-            bottomNavBar.setVisibility(tab == Tab.PROFILE ? View.GONE : View.VISIBLE);
-        }
-
-        // update icons
         setActiveIcon(tab);
-
         currentTab = tab;
     }
 
