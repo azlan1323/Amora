@@ -25,6 +25,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ServerValue;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -198,37 +199,61 @@ public class ChatFragment extends Fragment {
     }
 
     private void updateThreadsOnSend(String lastMessage, long timestamp) {
-        // Sender side thread: unread = 0
-        ChatThread senderThread = new ChatThread(
-                roomId,
-                receiverId,
-                receiverName,
-                receiverPhotoUrl,
-                lastMessage,
-                timestamp,
-                0
-        );
 
-        userChatsRoot.child(currentUser.getUid())
-                .child(roomId)
-                .setValue(senderThread);
+        // Load sender app-profile from Firebase
+        FirebaseDatabase.getInstance().getReference("users")
+                .child(currentUser.getUid())
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
 
-        // Receiver side thread: increment unreadCount
-        DatabaseReference receiverThreadRef = userChatsRoot
-                .child(receiverId)
-                .child(roomId);
+                        String myName = snapshot.child("name").getValue(String.class);
+                        String myPhoto = snapshot.child("profileImageUrl").getValue(String.class);
 
-        Map<String, Object> update = new HashMap<>();
-        update.put("roomId", roomId);
-        update.put("otherUserId", currentUser.getUid());
-        update.put("otherUserName",
-                currentUser.getDisplayName() != null ? currentUser.getDisplayName() : "You");
-        update.put("otherUserPhotoUrl", ""); // can be filled from user profile later
-        update.put("lastMessage", lastMessage);
-        update.put("lastTimestamp", timestamp);
-        update.put("unreadCount", ServerValue.increment(1));
+                        if (myName == null) myName = "User";
+                        if (myPhoto == null) myPhoto = "";
 
-        receiverThreadRef.updateChildren(update);
+                        // ─────────────────────────────────────────────
+                        // 1. UPDATE SENDER SIDE THREAD (unreadCount = 0)
+                        // ─────────────────────────────────────────────
+
+                        ChatThread senderThread = new ChatThread(
+                                roomId,
+                                receiverId,
+                                receiverName,        // correct name from arguments
+                                receiverPhotoUrl,    // correct photo from arguments
+                                lastMessage,
+                                timestamp,
+                                0
+                        );
+
+                        userChatsRoot.child(currentUser.getUid())
+                                .child(roomId)
+                                .setValue(senderThread);
+
+
+                        // ─────────────────────────────────────────────
+                        // 2. UPDATE RECEIVER SIDE THREAD
+                        // Use sender's REAL name + REAL photo from DB
+                        // ─────────────────────────────────────────────
+
+                        Map<String, Object> update = new HashMap<>();
+                        update.put("roomId", roomId);
+                        update.put("otherUserId", currentUser.getUid());
+                        update.put("otherUserName", myName);
+                        update.put("otherUserPhotoUrl", myPhoto);
+                        update.put("lastMessage", lastMessage);
+                        update.put("lastTimestamp", timestamp);
+                        update.put("unreadCount", ServerValue.increment(1));
+
+                        userChatsRoot.child(receiverId)
+                                .child(roomId)
+                                .updateChildren(update);
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) { }
+                });
     }
 
     private void markThreadAsRead() {
