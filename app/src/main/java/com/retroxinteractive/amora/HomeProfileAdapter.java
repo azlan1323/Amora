@@ -98,8 +98,22 @@ public class HomeProfileAdapter extends RecyclerView.Adapter<HomeProfileAdapter.
             holder.imgProfile.setImageResource(R.drawable.ic_nav_profile);
         }
 
-        // Like / Chat clicks can be wired later if needed
-        // holder.btnLike.setOnClickListener(...)
+        // Like button – (logic can be implemented later, e.g., saving to favorites)
+        holder.btnLike.setOnClickListener(v -> {
+            // TODO: implement like / unlike behavior
+        });
+
+        // Chat button – open ChatFragment through MainActivity
+        holder.btnChat.setOnClickListener(v -> {
+            if (context instanceof MainActivity) {
+                MainActivity activity = (MainActivity) context;
+                activity.openChatWith(
+                        profile.getUid(),          // make sure UserProfile has getUid()
+                        profile.getName(),
+                        profile.getPhotoUrl()
+                );
+            }
+        });
     }
 
     private void setChip(TextView chip, List<String> interests, int index) {
@@ -127,6 +141,7 @@ public class HomeProfileAdapter extends RecyclerView.Adapter<HomeProfileAdapter.
 
         ProfileViewHolder(@NonNull View itemView) {
             super(itemView);
+
             imgProfile      = itemView.findViewById(R.id.img_profile);
             layoutDistance  = itemView.findViewById(R.id.layout_distance);
             layoutMatch     = itemView.findViewById(R.id.layout_match);

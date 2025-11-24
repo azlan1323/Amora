@@ -156,13 +156,26 @@ public class DiscoverFragment extends Fragment {
                     }
 
                     String name = child.child("name").getValue(String.class);
-                    Long ageLong = child.child("age").getValue(Long.class);
                     String bio = child.child("bio").getValue(String.class);
                     String imageUrl = child.child("profileImageUrl").getValue(String.class);
                     Boolean verified = child.child("verified").getValue(Boolean.class);
 
                     Double lat = child.child("latitude").getValue(Double.class);
                     Double lng = child.child("longitude").getValue(Double.class);
+
+                    // Age can be stored as number or string in Firebase, so read it generically
+                    int age = 0;
+                    DataSnapshot ageSnap = child.child("age");
+                    if (ageSnap.exists()) {
+                        try {
+                            String ageStr = String.valueOf(ageSnap.getValue());  // works for "23" or 23
+                            if (!TextUtils.isEmpty(ageStr)) {
+                                age = Integer.parseInt(ageStr);
+                            }
+                        } catch (NumberFormatException e) {
+                            age = 0; // fallback if malformed
+                        }
+                    }
 
                     // Other user's interests
                     List<String> otherInterests = new ArrayList<>();
@@ -174,7 +187,6 @@ public class DiscoverFragment extends Fragment {
                         }
                     }
 
-                    int age = ageLong != null ? ageLong.intValue() : 0;
                     boolean isVerified = verified != null && verified;
 
                     double distanceKm = -1.0;

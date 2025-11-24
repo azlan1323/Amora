@@ -24,9 +24,12 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ServerValue;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -47,6 +50,7 @@ public class ChatFragment extends Fragment {
 
     private FirebaseUser currentUser;
     private DatabaseReference chatRef;
+    private DatabaseReference userChatsRoot;
 
     private String receiverId;
     private String receiverName;
@@ -54,13 +58,9 @@ public class ChatFragment extends Fragment {
     private String roomId;
 
     public ChatFragment() {
-        // Required empty public constructor
+        // Required empty constructor
     }
 
-    /**
-     * Factory method you can use later when opening a specific chat
-     * from a profile card / chat list.
-     */
     public static ChatFragment newInstance(String receiverId,
                                            String receiverName,
                                            String receiverPhotoUrl) {
@@ -83,6 +83,8 @@ public class ChatFragment extends Fragment {
             receiverName = getArguments().getString(ARG_RECEIVER_NAME);
             receiverPhotoUrl = getArguments().getString(ARG_RECEIVER_PHOTO);
         }
+
+        userChatsRoot = FirebaseDatabase.getInstance().getReference("userChats");
     }
 
     @Nullable
@@ -101,8 +103,7 @@ public class ChatFragment extends Fragment {
         setupToolbar();
         setupRecycler();
 
-        if (receiverId != null && !receiverId.isEmpty()) {
-            // Build a room id that is SAME for both sides (sorted uids)
+        if (!TextUtils.isEmpty(receiverId)) {
             String myId = currentUser.getUid();
             if (myId.compareTo(receiverId) < 0) {
                 roomId = myId + "_" + receiverId;
@@ -115,16 +116,15 @@ public class ChatFragment extends Fragment {
                     .child(roomId);
 
             listenForMessages();
+            markThreadAsRead();   // clear unread count when opening
 
             btnSend.setOnClickListener(v -> sendMessage());
         } else {
-            // No receiver yet – disable send for now.
             btnSend.setOnClickListener(v ->
                     Toast.makeText(requireContext(),
-                            "No chat selected yet", Toast.LENGTH_SHORT).show());
+                            "No chat selected", Toast.LENGTH_SHORT).show());
         }
 
-        // Go back (will pop fragment / go back in activity stack)
         btnBack.setOnClickListener(v -> requireActivity().onBackPressed());
 
         return root;
@@ -145,15 +145,11 @@ public class ChatFragment extends Fragment {
     private void setupToolbar() {
         if (txtName == null || txtStatus == null) return;
 
-        String title = (receiverName != null && !receiverName.isEmpty())
-                ? receiverName
-                : "Chat";
+        String title = !TextUtils.isEmpty(receiverName) ? receiverName : "Chat";
         txtName.setText(title);
+        txtStatus.setText(""); // placeholder for status
 
-        // You can later plug real online status here.
-        txtStatus.setText("");
-
-        if (receiverPhotoUrl != null && !receiverPhotoUrl.isEmpty()) {
+        if (!TextUtils.isEmpty(receiverPhotoUrl)) {
             Glide.with(requireContext())
                     .load(receiverPhotoUrl)
                     .placeholder(R.drawable.ic_nav_profile)
@@ -165,9 +161,8 @@ public class ChatFragment extends Fragment {
 
     private void setupRecycler() {
         LinearLayoutManager lm = new LinearLayoutManager(requireContext());
-        lm.setStackFromEnd(true); // start from bottom like chat apps
+        lm.setStackFromEnd(true);
         recyclerView.setLayoutManager(lm);
-
         adapter = new MessageAdapter(messageList);
         recyclerView.setAdapter(adapter);
     }
@@ -195,15 +190,57 @@ public class ChatFragment extends Fragment {
                 .addOnSuccessListener(unused -> {
                     edtMessage.setText("");
                     scrollToBottom();
+                    updateThreadsOnSend(text, timestamp);
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(requireContext(),
                                 "Failed to send", Toast.LENGTH_SHORT).show());
     }
 
-    private void listenForMessages() {
-        if (chatRef == null) return;
+    private void updateThreadsOnSend(String lastMessage, long timestamp) {
+        // Sender side thread: unread = 0
+        ChatThread senderThread = new ChatThread(
+                roomId,
+                receiverId,
+                receiverName,
+                receiverPhotoUrl,
+                lastMessage,
+                timestamp,
+                0
+        );
 
+        userChatsRoot.child(currentUser.getUid())
+                .child(roomId)
+                .setValue(senderThread);
+
+        // Receiver side thread: increment unreadCount
+        DatabaseReference receiverThreadRef = userChatsRoot
+                .child(receiverId)
+                .child(roomId);
+
+        Map<String, Object> update = new HashMap<>();
+        update.put("roomId", roomId);
+        update.put("otherUserId", currentUser.getUid());
+        update.put("otherUserName",
+                currentUser.getDisplayName() != null ? currentUser.getDisplayName() : "You");
+        update.put("otherUserPhotoUrl", ""); // can be filled from user profile later
+        update.put("lastMessage", lastMessage);
+        update.put("lastTimestamp", timestamp);
+        update.put("unreadCount", ServerValue.increment(1));
+
+        receiverThreadRef.updateChildren(update);
+    }
+
+    private void markThreadAsRead() {
+        if (TextUtils.isEmpty(roomId)) return;
+
+        userChatsRoot.child(currentUser.getUid())
+                .child(roomId)
+                .child("unreadCount")
+                .setValue(0);
+    }
+
+    private void listenForMessages() {
         chatRef.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot snapshot, String previousChildName) {
@@ -215,17 +252,22 @@ public class ChatFragment extends Fragment {
                 }
             }
 
-            @Override public void onChildChanged(@NonNull DataSnapshot snapshot, String previousChildName) { }
-            @Override public void onChildRemoved(@NonNull DataSnapshot snapshot) { }
-            @Override public void onChildMoved(@NonNull DataSnapshot snapshot, String previousChildName) { }
-            @Override public void onCancelled(@NonNull DatabaseError error) { }
+            @Override public void onChildChanged(@NonNull DataSnapshot snapshot, String prev) {}
+            @Override public void onChildRemoved(@NonNull DataSnapshot snapshot) {}
+            @Override public void onChildMoved(@NonNull DataSnapshot snapshot, String prev) {}
+            @Override public void onCancelled(@NonNull DatabaseError error) {}
         });
     }
 
     private void scrollToBottom() {
-        if (recyclerView == null || adapter == null) return;
-
         recyclerView.post(() ->
                 recyclerView.smoothScrollToPosition(Math.max(0, messageList.size() - 1)));
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // whenever we come back to this screen, clear unread count
+        markThreadAsRead();
     }
 }

@@ -100,11 +100,6 @@ public class ProfileDetailsActivity extends AppCompatActivity {
 
         initViews();
 
-        etAddress.setOnClickListener((v)->{
-            etAddress.setEnabled(false);
-            fetchLocationForAddressField();
-        });
-
         loadExistingProfile();   // prefill form if data exists
     }
 
@@ -387,6 +382,17 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                                            @NonNull String[] permissions,
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        // No need to do anything here for the simple flow we implemented.
+
+        if (requestCode == LOCATION_PERMISSION_REQUEST) {
+            if (grantResults.length > 0
+                    && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                // Permission granted -> immediately try to fetch location again
+                fetchLocationForAddressField();
+            } else {
+                Toast.makeText(this,
+                        "Location permission is required to fetch your coordinates.",
+                        Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 }

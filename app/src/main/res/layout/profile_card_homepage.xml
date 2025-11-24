@@ -211,7 +211,7 @@
 
         <ImageView
             android:id="@+id/btn_like"
-            android:layout_width="wrap_content"
+            android:layout_width="100dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="24dp"
             android:src="@drawable/btn_heart"
@@ -221,7 +221,7 @@
 
         <ImageView
             android:id="@+id/btn_chat"
-            android:layout_width="wrap_content"
+            android:layout_width="100dp"
             android:layout_height="wrap_content"
             android:src="@drawable/btn_chat"
             android:adjustViewBounds="true"
