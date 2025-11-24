@@ -79,6 +79,9 @@ public class HomepageFragment extends Fragment {
                 double myLng = 0.0;
                 boolean haveMyLocation = false;
 
+                // Interests of the current user
+                List<String> myInterests = new ArrayList<>();
+
                 DataSnapshot meSnap = snapshot.child(currentUid);
                 if (meSnap.exists()) {
                     Double lat = meSnap.child("latitude").getValue(Double.class);
@@ -87,6 +90,15 @@ public class HomepageFragment extends Fragment {
                         myLat = lat;
                         myLng = lng;
                         haveMyLocation = true;
+                    }
+
+                    // read my interests
+                    DataSnapshot myInterestsSnap = meSnap.child("interests");
+                    for (DataSnapshot iSnap : myInterestsSnap.getChildren()) {
+                        String interest = iSnap.getValue(String.class);
+                        if (interest != null && !interest.trim().isEmpty()) {
+                            myInterests.add(interest);
+                        }
                     }
                 }
 
@@ -117,12 +129,12 @@ public class HomepageFragment extends Fragment {
                     DataSnapshot interestsSnap = child.child("interests");
                     for (DataSnapshot iSnap : interestsSnap.getChildren()) {
                         String interest = iSnap.getValue(String.class);
-                        if (interest != null && !interest.isEmpty()) {
+                        if (interest != null && !interest.trim().isEmpty()) {
                             interests.add(interest);
                         }
                     }
 
-                    // Distance
+// Distance
                     Double distance = null;
                     if (haveMyLocation) {
                         Double lat = child.child("latitude").getValue(Double.class);
@@ -136,15 +148,14 @@ public class HomepageFragment extends Fragment {
                     profile.setUid(uid);
                     profile.setName(name);
                     profile.setBio(bio);
-
-                    // IMPORTANT: this is what HomeProfileAdapter uses
                     profile.setPhotoUrl(imageUrl);
-
                     profile.setVerified(verified != null && verified);
                     profile.setDistanceKm(distance);
                     profile.setInterests(interests);
-                    // You can set matchPercent later if you compute it
-                    // profile.setMatchPercent(...);
+
+// NEW: compute and store match percent
+                    int matchPercent = calculateMatchPercent(myInterests, interests);
+                    profile.setMatchPercent(matchPercent);
 
                     result.add(profile);
                 }
@@ -189,5 +200,43 @@ public class HomepageFragment extends Fragment {
             usersRef.removeEventListener(usersListener);
             usersListener = null;
         }
+    }
+
+    /**
+     * Returns how many of myInterests are shared with otherInterests, as a %.
+     * Example: my = ["Art","Music","Travel"], other = ["Music","Cooking"]
+     * common = 1 → 1/3 ≈ 33%.
+     */
+    private int calculateMatchPercent(List<String> myInterests, List<String> otherInterests) {
+        if (myInterests == null || myInterests.isEmpty()
+                || otherInterests == null || otherInterests.isEmpty()) {
+            return 0;
+        }
+
+        // count only non-empty items in myInterests
+        int baseCount = 0;
+        for (String s : myInterests) {
+            if (s != null && !s.trim().isEmpty()) {
+                baseCount++;
+            }
+        }
+        if (baseCount == 0) return 0;
+
+        int common = 0;
+        for (String mine : myInterests) {
+            if (mine == null || mine.trim().isEmpty()) continue;
+            String mineNorm = mine.trim().toLowerCase();
+
+            // see if other user has this interest (case-insensitive)
+            for (String other : otherInterests) {
+                if (other == null || other.trim().isEmpty()) continue;
+                if (mineNorm.equals(other.trim().toLowerCase())) {
+                    common++;
+                    break; // avoid double-counting
+                }
+            }
+        }
+
+        return (int) Math.round(common * 100.0 / baseCount);
     }
 }

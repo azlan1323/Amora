@@ -47,6 +47,8 @@ public class DiscoverFragment extends Fragment {
     private double currentLat = 0.0;
     private double currentLng = 0.0;
     private boolean hasCurrentLocation = false;
+    private final List<String> myInterests = new ArrayList<>();
+
 
     public DiscoverFragment() {
         // Required empty public constructor
@@ -104,9 +106,17 @@ public class DiscoverFragment extends Fragment {
                         currentLng = lng;
                         hasCurrentLocation = true;
                     }
+
+                    // Read my interests for matching
+                    myInterests.clear();
+                    DataSnapshot myInterestsSnap = snapshot.child("interests");
+                    for (DataSnapshot iSnap : myInterestsSnap.getChildren()) {
+                        String interest = iSnap.getValue(String.class);
+                        if (interest != null && !interest.trim().isEmpty()) {
+                            myInterests.add(interest);
+                        }
+                    }
                 }
-                // After we attempted to read current user's location,
-                // load all other users.
                 loadAllProfiles();
             }
 
@@ -154,6 +164,16 @@ public class DiscoverFragment extends Fragment {
                     Double lat = child.child("latitude").getValue(Double.class);
                     Double lng = child.child("longitude").getValue(Double.class);
 
+                    // Other user's interests
+                    List<String> otherInterests = new ArrayList<>();
+                    DataSnapshot interestsSnap = child.child("interests");
+                    for (DataSnapshot iSnap : interestsSnap.getChildren()) {
+                        String interest = iSnap.getValue(String.class);
+                        if (interest != null && !interest.trim().isEmpty()) {
+                            otherInterests.add(interest);
+                        }
+                    }
+
                     int age = ageLong != null ? ageLong.intValue() : 0;
                     boolean isVerified = verified != null && verified;
 
@@ -161,6 +181,9 @@ public class DiscoverFragment extends Fragment {
                     if (hasCurrentLocation && lat != null && lng != null) {
                         distanceKm = calculateDistanceKm(currentLat, currentLng, lat, lng);
                     }
+
+                    // NEW: compute match percent using helper
+                    int matchPercent = calculateMatchPercent(myInterests, otherInterests);
 
                     UserProfile profile = new UserProfile();
                     profile.uid = uid;
@@ -170,6 +193,7 @@ public class DiscoverFragment extends Fragment {
                     profile.profileImageUrl = imageUrl != null ? imageUrl : "";
                     profile.verified = isVerified;
                     profile.distanceKm = distanceKm;
+                    profile.matchPercent = matchPercent;
 
                     profiles.add(profile);
                 }
@@ -206,16 +230,56 @@ public class DiscoverFragment extends Fragment {
         return R * c;
     }
 
+    /**
+     * Returns how many of myInterests are shared with otherInterests, as a %.
+     * Example: my = ["Art","Music","Travel"], other = ["Music","Cooking"]
+     * common = 1 → 1/3 ≈ 33%.
+     */
+    private int calculateMatchPercent(List<String> myInterests, List<String> otherInterests) {
+        if (myInterests == null || myInterests.isEmpty()
+                || otherInterests == null || otherInterests.isEmpty()) {
+            return 0;
+        }
+
+        // count only non-empty items in myInterests
+        int baseCount = 0;
+        for (String s : myInterests) {
+            if (s != null && !s.trim().isEmpty()) {
+                baseCount++;
+            }
+        }
+        if (baseCount == 0) return 0;
+
+        int common = 0;
+        for (String mine : myInterests) {
+            if (mine == null || mine.trim().isEmpty()) continue;
+            String mineNorm = mine.trim().toLowerCase();
+
+            // see if other user has this interest (case-insensitive)
+            for (String other : otherInterests) {
+                if (other == null || other.trim().isEmpty()) continue;
+                if (mineNorm.equals(other.trim().toLowerCase())) {
+                    common++;
+                    break; // avoid double-counting
+                }
+            }
+        }
+
+        return (int) Math.round(common * 100.0 / baseCount);
+    }
+
     // ───────────────────── MODEL ─────────────────────
 
-    private static class UserProfile {
+    static class UserProfile {
         String uid;
         String name;
         int age;
         String bio;
         String profileImageUrl;
         boolean verified;
-        double distanceKm; // -1 if unknown
+        double distanceKm;   // -1 if unknown
+        int matchPercent;    // 0–100
+        List<String> interests;
     }
 
     // ───────────────────── ADAPTER ─────────────────────
@@ -243,7 +307,8 @@ public class DiscoverFragment extends Fragment {
 
             // Name + (optional age)
             if (profile.age > 0) {
-                holder.tvName.setText(profile.name + ", " + profile.age);
+                String str = profile.name + ", " + profile.age;
+                holder.tvName.setText(str);
             } else {
                 holder.tvName.setText(profile.name);
             }
@@ -259,8 +324,13 @@ public class DiscoverFragment extends Fragment {
                 holder.tvDistance.setText("—");
             }
 
-            // Optionally show some match % or leave hard-coded
-            holder.tvMatchPercent.setText("94%"); // TODO: compute or store in DB if needed
+            // Match %
+            if (profile.matchPercent > 0) {
+                String str = profile.matchPercent + "%";
+                holder.tvMatchPercent.setText(str);
+            } else {
+                holder.tvMatchPercent.setText("0%");
+            }
 
             // Load top image
             if (!TextUtils.isEmpty(profile.profileImageUrl)) {
