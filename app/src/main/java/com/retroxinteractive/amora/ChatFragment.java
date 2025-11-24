@@ -52,11 +52,13 @@ public class ChatFragment extends Fragment {
     private FirebaseUser currentUser;
     private DatabaseReference chatRef;
     private DatabaseReference userChatsRoot;
+    private DatabaseReference likesRoot;
 
     private String receiverId;
     private String receiverName;
     private String receiverPhotoUrl;
     private String roomId;
+    private TextView tvMatched;
 
     public ChatFragment() {
         // Required empty constructor
@@ -86,6 +88,7 @@ public class ChatFragment extends Fragment {
         }
 
         userChatsRoot = FirebaseDatabase.getInstance().getReference("userChats");
+        likesRoot = FirebaseDatabase.getInstance().getReference("likes");
     }
 
     @Nullable
@@ -103,6 +106,7 @@ public class ChatFragment extends Fragment {
         initViews(root);
         setupToolbar();
         setupRecycler();
+        checkMatchStatus();
 
         if (!TextUtils.isEmpty(receiverId)) {
             String myId = currentUser.getUid();
@@ -139,9 +143,52 @@ public class ChatFragment extends Fragment {
         txtStatus = root.findViewById(R.id.txtStatus);
         edtMessage = root.findViewById(R.id.edtMessage);
         recyclerView = root.findViewById(R.id.recyclerMessages);
+        tvMatched = root.findViewById(R.id.tvMatched);
 
         messageList = new ArrayList<>();
     }
+
+    private void checkMatchStatus() {
+        if (currentUser == null || TextUtils.isEmpty(receiverId)) return;
+        if (tvMatched == null) return;
+
+        final String myId = currentUser.getUid();
+
+        // Only show MATCHED if *I* liked them AND *they* liked me
+        likesRoot.child(myId).child(receiverId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot myLikeSnap) {
+                        if (!myLikeSnap.exists()) {
+                            // I haven't liked them yet -> no match
+                            return;
+                        }
+
+                        // Check reverse like
+                        likesRoot.child(receiverId).child(myId)
+                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot otherLikeSnap) {
+                                        if (otherLikeSnap.exists()) {
+                                            // Mutual like – show MATCHED
+                                            tvMatched.setText("MATCHED");
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                        // ignore
+                                    }
+                                });
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        // ignore
+                    }
+                });
+    }
+
 
     private void setupToolbar() {
         if (txtName == null || txtStatus == null) return;

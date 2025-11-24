@@ -4,6 +4,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -56,6 +57,10 @@ public class ProfileFragment extends Fragment {
 
     private DatabaseReference userRef;
     private String currentUid;
+
+    // For opening chat from this screen
+    private String displayedUserName;
+    private String displayedUserPhotoUrl;
 
     private ActivityResultLauncher<String> pickImagesLauncher;
 
@@ -175,10 +180,92 @@ public class ProfileFragment extends Fragment {
             if (bottomActionBar != null) {
                 bottomActionBar.setVisibility(View.VISIBLE);
             }
+            ImageButton btnLike = view.findViewById(R.id.btn_like);
+            ImageButton btnChat = view.findViewById(R.id.btn_chat);
+
+            if (btnChat != null) {
+                btnChat.setOnClickListener(v -> openChatForCurrentProfile());
+            }
+
+            if (btnLike != null) {
+                btnLike.setOnClickListener(v -> handleLikeClick());
+            }
         }
 
         loadUserProfile();
         return view;
+    }
+
+    private void openChatForCurrentProfile() {
+        if (!(getActivity() instanceof MainActivity)) return;
+
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(requireContext(), "You must be logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // currentUid is the profile we’re looking at (your own or someone else’s)
+        if (TextUtils.isEmpty(currentUid) || currentUid.equals(user.getUid())) {
+            // Don’t try to chat with yourself
+            Toast.makeText(requireContext(), "Cannot start chat with this profile", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String name = !TextUtils.isEmpty(displayedUserName)
+                ? displayedUserName
+                : (tvNameAge != null ? tvNameAge.getText().toString() : "User");
+        String photo = displayedUserPhotoUrl != null ? displayedUserPhotoUrl : "";
+
+        ((MainActivity) getActivity()).openChatWith(currentUid, name, photo);
+    }
+
+    private void handleLikeClick() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(requireContext(), "You must be logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (TextUtils.isEmpty(currentUid) || currentUid.equals(user.getUid())) {
+            Toast.makeText(requireContext(), "Invalid profile to like", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String myId = user.getUid();
+        String otherId = currentUid;
+
+        DatabaseReference likesRef = FirebaseDatabase.getInstance()
+                .getReference("likes");
+
+        // Store that current user liked otherId
+        likesRef.child(myId).child(otherId)
+                .setValue(true)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(requireContext(), "You liked this profile", Toast.LENGTH_SHORT).show();
+
+                    // Check if they already liked me back -> match
+                    likesRef.child(otherId).child(myId)
+                            .addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                    if (snapshot.exists()) {
+                                        Toast.makeText(requireContext(), "It's a match!", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError error) {
+                                    // ignore
+                                }
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(requireContext(),
+                            "Failed to like profile: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                    Log.e("ProfileFragment", "Failed to like profile", e);
+                });
     }
 
     // ------------------ LOAD PROFILE ------------------
@@ -215,6 +302,10 @@ public class ProfileFragment extends Fragment {
                 if (!TextUtils.isEmpty(bio)) {
                     tvBio.setText(bio);
                 }
+
+                // Save for later (chat + like)
+                displayedUserName = name;
+                displayedUserPhotoUrl = profileImageUrl;
 
                 // fullscreen header image
                 if (!TextUtils.isEmpty(profileImageUrl) && getContext() != null) {
