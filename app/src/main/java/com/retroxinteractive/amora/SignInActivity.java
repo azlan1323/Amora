@@ -33,6 +33,11 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 public class SignInActivity extends AppCompatActivity {
     private static final String TAG = "SignInActivity";
@@ -61,9 +66,8 @@ public class SignInActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        // If already signed in, skip sign-in screen
         FirebaseUser currentUser = mAuth.getCurrentUser();
-        updateUI(currentUser);
+        checkUserStatus(currentUser);
     }
 
     private void init() {
@@ -175,13 +179,13 @@ public class SignInActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         Log.d(TAG, "signInWithCredential:success");
                         FirebaseUser user = mAuth.getCurrentUser();
-                        updateUI(user);
+                        checkUserStatus(user);
                     } else {
                         Log.w(TAG, "signInWithCredential:failure", task.getException());
                         Toast.makeText(SignInActivity.this,
                                 "Firebase authentication failed.",
                                 Toast.LENGTH_SHORT).show();
-                        updateUI(null);
+                        checkUserStatus(null);
                     }
                 });
     }
@@ -189,13 +193,52 @@ public class SignInActivity extends AppCompatActivity {
     /**
      * Navigate to your main/home activity when signed-in.
      */
-    private void updateUI(@Nullable FirebaseUser user) {
-        if (user != null) {
-            // TODO: replace HomeActivity with your actual main activity
-            Intent intent = new Intent(this, ProfileDetailsActivity.class);
-            startActivity(intent);
-            finish(); // close SignInActivity
+
+    private void checkUserStatus(@Nullable FirebaseUser currentUser) {
+
+        // 1. User NOT logged in → go to Onboarding
+        if (currentUser == null) {
+            startActivity(new Intent(SignInActivity.this, OnboardingActivity.class));
+            finish();
+            return;
         }
-        // else: stay on this screen
+
+        // 2. User is logged in → Now check if profile is completed
+        DatabaseReference userRef = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(currentUser.getUid());
+
+        userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+
+                if (!snapshot.exists()) {
+                    // No profile yet → go to ProfileDetailsActivity
+                    goToProfileDetails();
+                    return;
+                }
+
+                // Assuming you have a boolean "profileCompleted" stored in DB
+                Boolean isCompleted = snapshot.child("profileCompleted").getValue(Boolean.class);
+
+                if (isCompleted != null && isCompleted) {
+                    startActivity(new Intent(SignInActivity.this, MainActivity.class));
+                    finish();
+                } else {
+                    goToProfileDetails();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                // In case of error, force user to fill profile
+                goToProfileDetails();
+            }
+        });
+    }
+
+    private void goToProfileDetails() {
+        startActivity(new Intent(this, ProfileDetailsActivity.class));
+        finish();
     }
 }
