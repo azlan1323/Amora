@@ -1,6 +1,7 @@
 package com.retroxinteractive.amora;
 
 import android.content.Context;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -39,6 +40,9 @@ public class ProfileFragment extends Fragment {
 
     private static final String ARG_FROM_MAIN_PROFILE = "from_main_profile";
     private static final String ARG_USER_ID = "user_id";
+    private ImageButton btnEditBio;
+    private String currentUserId;
+
 
     // true = opened from MainActivity (own profile)
     private boolean openedFromMainProfile = false;
@@ -144,6 +148,8 @@ public class ProfileFragment extends Fragment {
         tvInterest5 = view.findViewById(R.id.tv_interest_music);
         tvInterest6 = view.findViewById(R.id.tv_interest_painting);
 
+
+
         // Back button in top bar
         ImageButton btnBack = view.findViewById(R.id.btn_back);
         if (btnBack != null) {
@@ -191,6 +197,19 @@ public class ProfileFragment extends Fragment {
                 btnLike.setOnClickListener(v -> handleLikeClick());
             }
         }
+
+        // Show edit button only if this is owner's profile
+        if (viewedUserId != null && viewedUserId.equals(currentUserId)) {
+            btnEditBio.setVisibility(View.VISIBLE);
+        } else {
+            btnEditBio.setVisibility(View.GONE);
+        }
+
+        btnEditBio.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), ProfileDetailsActivity.class);
+            startActivity(intent);
+        });
+
 
         loadUserProfile();
         return view;
