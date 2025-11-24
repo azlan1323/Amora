@@ -63,48 +63,7 @@
         android:id="@+id/filter_container"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/filters_btn"
-            android:text="18–24 y.o."
-            android:textColor="@android:color/white"
-            android:textSize="14sp"
-            android:paddingStart="35dp"
-            android:paddingEnd="16dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:layout_marginEnd="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/filters_btn"
-            android:text="Dating"
-            android:textColor="@android:color/white"
-            android:textSize="14sp"
-            android:paddingStart="35dp"
-            android:paddingEnd="16dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:layout_marginEnd="8dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/filters_btn"
-            android:text="Verified"
-            android:textColor="@android:color/white"
-            android:textSize="14sp"
-            android:paddingStart="35dp"
-            android:paddingEnd="16dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:layout_marginEnd="8dp" />
-
-    </LinearLayout>
+        android:orientation="horizontal" />
 </HorizontalScrollView>
 
 <!-- Grid of profile cards -->

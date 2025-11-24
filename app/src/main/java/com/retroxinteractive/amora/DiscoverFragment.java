@@ -5,7 +5,9 @@ import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -26,266 +28,270 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
-/**
- * Discover screen showing mini profile cards in a grid.
- * Layout: fragment_discover.xml
- * Item:   item_mini_profile_card.xml
- */
+import android.view.Menu;
+import android.widget.PopupMenu;
+import androidx.core.content.ContextCompat;
+
 public class DiscoverFragment extends Fragment {
 
+    private ImageView filterBtnTop;
+    private HorizontalScrollView filterScroll;
+    private LinearLayout filterContainer;
     private RecyclerView rvProfiles;
 
-    private FirebaseAuth mAuth;
+    // Data
+    private final List<UserProfile> allProfiles = new ArrayList<>();
+    private final List<UserProfile> filteredProfiles = new ArrayList<>();
+
+    // Filters
+    private final Set<String> selectedFilters = new LinkedHashSet<>();
+    private final Set<String> availableFilters = new LinkedHashSet<>();
+
+    // Firebase
+    private FirebaseUser currentUser;
     private DatabaseReference usersRef;
+    private ValueEventListener usersListener;
 
+    // Adapter (CHANGE name if your adapter is called something else)
     private DiscoverAdapter adapter;
-    private final List<UserProfile> profiles = new ArrayList<>();
 
-    // current logged-in user's coords (from DB)
-    private double currentLat = 0.0;
-    private double currentLng = 0.0;
-    private boolean hasCurrentLocation = false;
-    private final List<String> myInterests = new ArrayList<>();
-
-
-    public DiscoverFragment() {
-        // Required empty public constructor
-    }
+    public DiscoverFragment() { }
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
-        // Inflate fragment_discover.xml
-        return inflater.inflate(R.layout.fragment_discover, container, false);
+        View root = inflater.inflate(R.layout.fragment_discover, container, false);
+
+        currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        usersRef = FirebaseDatabase.getInstance().getReference("users");
+
+        filterBtnTop = root.findViewById(R.id.filter_btn_top);
+        filterScroll = root.findViewById(R.id.filter_scroll);
+        filterContainer = root.findViewById(R.id.filter_container);
+        rvProfiles = root.findViewById(R.id.rv_discover_profiles);
+
+        // RecyclerView setup: 2-column grid
+        rvProfiles.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        adapter = new DiscoverAdapter(filteredProfiles);
+        rvProfiles.setAdapter(adapter);
+
+        // Hide filter bar initially
+        filterScroll.setVisibility(View.GONE);
+
+        // Filter button click → open popup menu with interests
+        filterBtnTop.setOnClickListener(v -> showFilterMenu());
+
+        availableFilters.add("Art");
+        availableFilters.add("Traveling");
+        availableFilters.add("Cooking");
+        availableFilters.add("Gaming");
+        availableFilters.add("Music");
+
+        return root;
     }
 
     @Override
-    public void onViewCreated(@NonNull View view,
-                              @Nullable Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-        mAuth = FirebaseAuth.getInstance();
-        usersRef = FirebaseDatabase.getInstance().getReference("users");
-
-        rvProfiles = view.findViewById(R.id.rv_discover_profiles);
-        rvProfiles.setLayoutManager(new GridLayoutManager(requireContext(), 2));
-        rvProfiles.setHasFixedSize(true);
-
-        adapter = new DiscoverAdapter(profiles);
-        rvProfiles.setAdapter(adapter);
-
-        loadCurrentUserAndThenUsers();
+    public void onStart() {
+        super.onStart();
+        attachUsersListener();
     }
 
-    /**
-     * First load current user's coordinates from /users/<uid>,
-     * then load all other users for Discover.
-     */
-    private void loadCurrentUserAndThenUsers() {
-        FirebaseUser user = mAuth.getCurrentUser();
-        if (user == null) {
-            Toast.makeText(requireContext(),
-                    "Not signed in", Toast.LENGTH_SHORT).show();
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (usersListener != null) {
+            usersRef.removeEventListener(usersListener);
+            usersListener = null;
+        }
+    }
+
+    private void attachUsersListener() {
+        if (currentUser == null) {
+            Toast.makeText(requireContext(), "Not logged in", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        String uid = user.getUid();
+        final String currentUid = currentUser.getUid();
 
-        usersRef.child(uid).addListenerForSingleValueEvent(new ValueEventListener() {
+        usersListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    Double lat = snapshot.child("latitude").getValue(Double.class);
-                    Double lng = snapshot.child("longitude").getValue(Double.class);
-                    if (lat != null && lng != null) {
-                        currentLat = lat;
-                        currentLng = lng;
-                        hasCurrentLocation = true;
-                    }
-
-                    // Load my interests (for match %)
-                    myInterests.clear();
-                    DataSnapshot myInterestsSnap = snapshot.child("interests");
-                    for (DataSnapshot iSnap : myInterestsSnap.getChildren()) {
-                        String interest = iSnap.getValue(String.class);
-                        if (interest != null && !interest.trim().isEmpty()) {
-                            myInterests.add(interest);
-                        }
-                    }
-                }
-                loadAllProfiles();
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                hasCurrentLocation = false;
-                loadAllProfiles();
-            }
-        });
-    }
-
-    /**
-     * Load all users from /users and populate RecyclerView.
-     */
-    private void loadAllProfiles() {
-        FirebaseUser user = mAuth.getCurrentUser();
-        if (user == null) return;
-
-        String myUid = user.getUid();
-
-        usersRef.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                profiles.clear();
+                allProfiles.clear();
+                filteredProfiles.clear();
+                availableFilters.clear();
 
                 for (DataSnapshot child : snapshot.getChildren()) {
                     String uid = child.getKey();
-                    if (uid == null) continue;
+                    if (uid == null || uid.equals(currentUid)) continue;
 
-                    // Skip self in discover list
-                    if (uid.equals(myUid)) continue;
-
-                    // Optional: only show completed profiles
-                    Boolean completed = child.child("profileCompleted").getValue(Boolean.class);
-                    if (completed != null && !completed) {
-                        continue;
-                    }
+                    Boolean profileCompleted =
+                            child.child("profileCompleted").getValue(Boolean.class);
+                    if (profileCompleted != null && !profileCompleted) continue;
 
                     String name = child.child("name").getValue(String.class);
                     String bio = child.child("bio").getValue(String.class);
                     String imageUrl = child.child("profileImageUrl").getValue(String.class);
-                    Boolean verified = child.child("verified").getValue(Boolean.class);
 
-                    Double lat = child.child("latitude").getValue(Double.class);
-                    Double lng = child.child("longitude").getValue(Double.class);
-
-                    // Age: you might be storing "age" as a number or deriving from dob
-                    int age = 0;
-                    if (child.child("age").getValue() != null) {
-                        try {
-                            Long ageLong = child.child("age").getValue(Long.class);
-                            if (ageLong != null) {
-                                age = ageLong.intValue();
-                            }
-                        } catch (Exception e) {
-                            // fallback
-                            age = 0;
-                        }
-                    } else if (child.child("dob").getValue() != null) {
-                        // Example if dob is "1999-01-01" and you want to compute age
-                        try {
-                            String dobStr = child.child("dob").getValue(String.class);
-                            if (!TextUtils.isEmpty(dobStr)) {
-                                // TODO: parse dobStr if you implement actual age calculation
-                                age = 0;
-                            }
-                        } catch (Exception e) {
-                            age = 0; // fallback
-                        }
-                    }
-
-                    // Other user's interests
-                    List<String> otherInterests = new ArrayList<>();
+                    // Interests list
+                    List<String> interests = new ArrayList<>();
                     DataSnapshot interestsSnap = child.child("interests");
                     for (DataSnapshot iSnap : interestsSnap.getChildren()) {
                         String interest = iSnap.getValue(String.class);
                         if (interest != null && !interest.trim().isEmpty()) {
-                            otherInterests.add(interest);
+                            interests.add(interest);
                         }
                     }
 
-                    boolean isVerified = verified != null && verified;
-
-                    double distanceKm = -1.0;
-                    if (hasCurrentLocation && lat != null && lng != null) {
-                        distanceKm = calculateDistanceKm(currentLat, currentLng, lat, lng);
-                    }
-
-                    // compute match percent using helper
-                    int matchPercent = calculateMatchPercent(myInterests, otherInterests);
-
                     UserProfile profile = new UserProfile();
                     profile.uid = uid;
-                    profile.name = name != null ? name : "";
-                    profile.age = age;
-                    profile.bio = bio != null ? bio : "";
-                    profile.profileImageUrl = imageUrl != null ? imageUrl : "";
-                    profile.verified = isVerified;
-                    profile.distanceKm = distanceKm;
-                    profile.matchPercent = matchPercent;
+                    profile.name = name;
+                    profile.bio = bio;
+                    profile.profileImageUrl = imageUrl;
+                    profile.interests = interests;
 
-                    profiles.add(profile);
+                    allProfiles.add(profile);
                 }
 
-                adapter.notifyDataSetChanged();
+                // Once we have data → apply filters (or show all)
+                applyFilters();
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                if (!isAdded() || getContext() == null) {
-                    return; // Stop execution if the fragment is dead
-                }
-
-                Toast.makeText(getContext(),
-                        "Failed to load users: " + error.getMessage(),
-                        Toast.LENGTH_SHORT).show();
+                if (!isAdded()) return;
+                Toast.makeText(
+                        requireContext(),
+                        "Failed to load discover profiles: " + error.getMessage(),
+                        Toast.LENGTH_LONG
+                ).show();
             }
+        };
+
+        usersRef.addValueEventListener(usersListener);
+    }
+
+    // ─────────────────────────────────────────────
+    // Popup menu for picking filters (interests)
+    // ─────────────────────────────────────────────
+    private void showFilterMenu() {
+        if (availableFilters.isEmpty()) {
+            Toast.makeText(requireContext(),
+                    "No filters available yet.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        PopupMenu menu = new PopupMenu(requireContext(), filterBtnTop);
+        int id = 0;
+        for (String interest : availableFilters) {
+            // Avoid adding filters that are already selected
+            if (!selectedFilters.contains(interest)) {
+                menu.getMenu().add(Menu.NONE, id++, Menu.NONE, interest);
+            }
+        }
+
+        // If every available filter is already selected, nothing to show
+        if (menu.getMenu().size() == 0) {
+            Toast.makeText(requireContext(),
+                    "All filters already selected.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        menu.setOnMenuItemClickListener(item -> {
+            String chosen = item.getTitle().toString();
+            if (!TextUtils.isEmpty(chosen) && !selectedFilters.contains(chosen)) {
+                selectedFilters.add(chosen);
+                refreshFilterChips();
+                applyFilters();
+            }
+            return true;
         });
+
+        menu.show();
     }
 
-    /**
-     * Great-circle distance (in km) using Haversine formula.
-     */
-    private double calculateDistanceKm(double lat1, double lon1,
-                                       double lat2, double lon2) {
-        final double R = 6371.0; // km
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLon = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
-                + Math.cos(Math.toRadians(lat1))
-                * Math.cos(Math.toRadians(lat2))
-                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
+    // ─────────────────────────────────────────────
+    // Show selected filters as chips
+    // ─────────────────────────────────────────────
+    private void refreshFilterChips() {
+        filterContainer.removeAllViews();
+
+        if (selectedFilters.isEmpty()) {
+            filterScroll.setVisibility(View.GONE);
+            return;
+        }
+
+        filterScroll.setVisibility(View.VISIBLE);
+
+        for (String filter : selectedFilters) {
+            TextView chip = createFilterChip(filter);
+            filterContainer.addView(chip);
+        }
     }
 
-    /**
-     * Returns how many of myInterests are shared with otherInterests, as a %.
-     * Example: my = ["Art","Music","Travel"], other = ["Music","Cooking"]
-     * common = 1 → 1/3 ≈ 33%.
-     */
-    private int calculateMatchPercent(List<String> myInterests, List<String> otherInterests) {
-        if (myInterests == null || myInterests.isEmpty()
-                || otherInterests == null || otherInterests.isEmpty()) {
-            return 0;
-        }
+    private TextView createFilterChip(String label) {
+        TextView tv = new TextView(requireContext());
+        tv.setText(label);
+        tv.setTextSize(14f);
+        tv.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.white));
+        tv.setBackground(ContextCompat.getDrawable(requireContext(), R.drawable.filters_btn));
+        tv.setPadding(dp(16), dp(8), dp(16), dp(8));
 
-        // count only non-empty items in myInterests
-        int baseCount = 0;
-        for (String s : myInterests) {
-            if (s != null && !s.trim().isEmpty()) {
-                baseCount++;
-            }
-        }
-        if (baseCount == 0) return 0;
+        LinearLayout.LayoutParams lp =
+                new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, dp(8), 0);
+        tv.setLayoutParams(lp);
 
-        int common = 0;
-        for (String mine : myInterests) {
-            if (mine == null || mine.trim().isEmpty()) continue;
-            for (String other : otherInterests) {
-                if (other == null || other.trim().isEmpty()) continue;
-                if (mine.equalsIgnoreCase(other)) {
-                    common++;
-                    break;
+        // Clicking a chip removes that filter
+        tv.setOnClickListener(v -> {
+            selectedFilters.remove(label);
+            refreshFilterChips();
+            applyFilters();
+        });
+
+        return tv;
+    }
+
+    private int dp(int value) {
+        float density = getResources().getDisplayMetrics().density;
+        return (int) (value * density);
+    }
+
+    // ─────────────────────────────────────────────
+    // Apply filters to profiles
+    // ─────────────────────────────────────────────
+    private void applyFilters() {
+        filteredProfiles.clear();
+
+        if (selectedFilters.isEmpty()) {
+            filteredProfiles.addAll(allProfiles);
+        } else {
+            for (UserProfile profile : allProfiles) {
+                List<String> interests = profile.interests;
+                if (interests == null) interests = new ArrayList<>();
+
+                if (interestsContainAll(interests, selectedFilters)) {
+                    filteredProfiles.add(profile);
                 }
             }
         }
 
-        return (int) Math.round(common * 100.0 / baseCount);
+        adapter.notifyDataSetChanged();
+    }
+
+    private boolean interestsContainAll(List<String> interests, Set<String> filters) {
+        // Every filter must be present in profile's interests
+        for (String f : filters) {
+            if (!interests.contains(f)) return false;
+        }
+        return true;
     }
 
     // ───────────────────── MODEL ─────────────────────
