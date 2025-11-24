@@ -8,6 +8,7 @@ public class UserProfile {
     private String uid;
     private String name;
     private String bio;
+    private String address;
     private String photoUrl;
     private Boolean verified;
     private Double distanceKm;       // optional; can be null
@@ -19,6 +20,9 @@ public class UserProfile {
     }
 
     // --- Getters & setters ---
+
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
 
     public String getUid() { return uid; }
     public void setUid(String uid) { this.uid = uid; }

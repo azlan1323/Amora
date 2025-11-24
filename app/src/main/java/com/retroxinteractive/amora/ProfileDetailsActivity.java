@@ -64,6 +64,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
     private double currentLatitude = 0.0;
     private double currentLongitude = 0.0;
     private boolean hasLocation = false;
+    String coordsText;
 
     private ActivityResultLauncher<String> imagePickerLauncher;
 
@@ -183,6 +184,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
         String name = etName.getText().toString().trim();
         String age = etAge.getText().toString().trim();
         String bio = etBio.getText().toString().trim();
+        String address = etAddress.getText().toString().trim();
 
         // VALIDATION
         if (TextUtils.isEmpty(name)) {
@@ -221,10 +223,16 @@ public class ProfileDetailsActivity extends AppCompatActivity {
             return;
         }
 
+        if (TextUtils.isEmpty(address)) {
+            etAddress.setError("Address required");
+            etAddress.requestFocus();
+            return;
+        }
+
         btnSave.setEnabled(false);
 
         // Now we expect location to be fetched already when user tapped Address
-        getLocationAndSaveProfile(user, name, age, bio, interests);
+        getLocationAndSaveProfile(user, name, age, bio, address, interests);
     }
 
     /**
@@ -251,8 +259,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                         currentLongitude = location.getLongitude();
                         hasLocation = true;
 
-                        String coordsText = currentLatitude + ", " + currentLongitude;
-                        etAddress.setText(coordsText);
+                        coordsText = currentLatitude + ", " + currentLongitude;
                     } else {
                         Toast.makeText(this,
                                 "Could not get location. Make sure GPS is on.",
@@ -272,6 +279,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                                            String name,
                                            String age,
                                            String bio,
+                                           String address,
                                            List<String> interests) {
 
         if (!hasLocation) {
@@ -282,7 +290,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
             return;
         }
 
-        proceedWithImageAndDatabase(user, name, age, bio, interests, currentLatitude, currentLongitude);
+        proceedWithImageAndDatabase(user, name, age, bio, address, interests, currentLatitude, currentLongitude);
     }
 
     /**
@@ -292,14 +300,15 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                                              String name,
                                              String age,
                                              String bio,
+                                             String address,
                                              List<String> interests,
                                              double lat,
                                              double lng) {
 
         if (selectedImageUri != null) {
-            uploadImageAndSaveProfile(user, name, age, bio, interests, lat, lng);
+            uploadImageAndSaveProfile(user, name, age, bio, address, interests, lat, lng);
         } else {
-            writeProfileToDatabase(user, name, age, bio, interests, lat, lng, existingImageUrl);
+            writeProfileToDatabase(user, name, age, bio, address, interests, lat, lng, existingImageUrl);
         }
     }
 
@@ -308,6 +317,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                                            String name,
                                            String age,
                                            String bio,
+                                           String address,
                                            List<String> interests,
                                            double lat,
                                            double lng) {
@@ -322,7 +332,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                 .addOnSuccessListener(taskSnapshot ->
                         userImageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                             String downloadUrl = uri.toString();
-                            writeProfileToDatabase(user, name, age, bio, interests, lat, lng, downloadUrl);
+                            writeProfileToDatabase(user, name, age, bio, address, interests, lat, lng, downloadUrl);
                         }))
                 .addOnFailureListener(e -> {
                     btnSave.setEnabled(true);
@@ -337,6 +347,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                                         String name,
                                         String age,
                                         String bio,
+                                        String address,
                                         List<String> interests,
                                         double latitude,
                                         double longitude,
@@ -345,7 +356,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
         Map<String, Object> profileMap = new HashMap<>();
         profileMap.put("name", name);
         profileMap.put("age", age);
-        // profileMap.put("address", address); // REMOVED
+        profileMap.put("address", address); // REMOVED
         profileMap.put("bio", bio);
         profileMap.put("interests", interests);
         profileMap.put("profileCompleted", true);

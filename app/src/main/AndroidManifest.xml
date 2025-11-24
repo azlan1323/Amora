@@ -24,10 +24,6 @@
             android:exported="false" />
 
         <activity
-            android:name=".TempActivity"
-            android:exported="false" />
-
-        <activity
             android:name=".ProfileDetailsActivity"
             android:exported="false" />
 

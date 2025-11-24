@@ -1,9 +1,11 @@
 package com.retroxinteractive.amora;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -31,6 +33,8 @@ public class HomepageFragment extends Fragment {
     private FirebaseAuth mAuth;
     private DatabaseReference usersRef;
     private ValueEventListener usersListener;
+    private TextView tvLocation;
+    FirebaseUser currentUser;
 
     @Nullable
     @Override
@@ -60,13 +64,41 @@ public class HomepageFragment extends Fragment {
         mAuth = FirebaseAuth.getInstance();
         usersRef = FirebaseDatabase.getInstance().getReference("users");
 
-        FirebaseUser currentUser = mAuth.getCurrentUser();
+        tvLocation = view.findViewById(R.id.tv_location);
+
+        currentUser = mAuth.getCurrentUser();
         if (currentUser == null) {
             // Not logged in, nothing to show
             return;
         }
 
+        setAddressField();
         attachUsersListener(currentUser.getUid());
+    }
+
+    private void setAddressField() {
+        String uid = currentUser.getUid();
+
+        DatabaseReference ref = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(uid)
+                .child("address");
+
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String address = snapshot.getValue(String.class);
+                if (address != null) {
+                    // use address
+                    Log.d("USER_ADDRESS", "Address: " + address);
+                    tvLocation.setText(address);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
     }
 
     private void attachUsersListener(String currentUid) {
@@ -120,6 +152,9 @@ public class HomepageFragment extends Fragment {
 
                     String name = child.child("name").getValue(String.class);
                     String bio = child.child("bio").getValue(String.class);
+                    String address = child.child("address").getValue(String.class);
+
+
                     // This is how it is saved in your DB
                     String imageUrl = child.child("profileImageUrl").getValue(String.class);
                     Boolean verified = child.child("verified").getValue(Boolean.class);
@@ -148,12 +183,13 @@ public class HomepageFragment extends Fragment {
                     profile.setUid(uid);
                     profile.setName(name);
                     profile.setBio(bio);
+                    profile.setAddress(address);
                     profile.setPhotoUrl(imageUrl);
                     profile.setVerified(verified != null && verified);
                     profile.setDistanceKm(distance);
                     profile.setInterests(interests);
 
-// NEW: compute and store match percent
+                    // NEW: compute and store match percent
                     int matchPercent = calculateMatchPercent(myInterests, interests);
                     profile.setMatchPercent(matchPercent);
 
