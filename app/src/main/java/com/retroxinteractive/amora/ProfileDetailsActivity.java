@@ -46,7 +46,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
 
     private static final int LOCATION_PERMISSION_REQUEST = 1001;   // NEW
 
-    private EditText etName, etAddress, etBio;
+    private EditText etName, etAge, etBio, etAddress;
     private ChipGroup chipGroupInterests;
     private ImageView imgProfile;
     private MaterialButton btnSave;
@@ -60,7 +60,10 @@ public class ProfileDetailsActivity extends AppCompatActivity {
     private String existingImageUrl = null;
 
     // location
-    private FusedLocationProviderClient fusedLocationClient;       // NEW
+    private FusedLocationProviderClient fusedLocationClient;
+    private double currentLatitude = 0.0;
+    private double currentLongitude = 0.0;
+    private boolean hasLocation = false;
 
     private ActivityResultLauncher<String> imagePickerLauncher;
 
@@ -82,7 +85,6 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                 .getReference()
                 .child("profile_images");
 
-        // NEW: location client
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         // image picker
@@ -97,12 +99,19 @@ public class ProfileDetailsActivity extends AppCompatActivity {
         );
 
         initViews();
+
+        etAddress.setOnClickListener((v)->{
+            etAddress.setEnabled(false);
+            fetchLocationForAddressField();
+        });
+
         loadExistingProfile();   // prefill form if data exists
     }
 
     private void initViews() {
         etName = findViewById(R.id.etName);
-        etAddress = findViewById(R.id.etAddress);  // still bound, but no longer used
+        etAge = findViewById(R.id.etAge);
+        etAddress = findViewById(R.id.etAddress);
         etBio = findViewById(R.id.etBio);
         chipGroupInterests = findViewById(R.id.chipGroupInterests);
         imgProfile = findViewById(R.id.imgProfile);
@@ -111,6 +120,10 @@ public class ProfileDetailsActivity extends AppCompatActivity {
         imgProfile.setOnClickListener(v ->
                 imagePickerLauncher.launch("image/*")
         );
+
+        // When the user taps the address field, fetch GPS coordinates and show them
+        etAddress.setOnClickListener(v -> fetchLocationForAddressField());
+
         btnSave.setOnClickListener(v -> saveProfile());
     }
 
@@ -126,13 +139,14 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                         if (!snapshot.exists()) return;
 
                         String name = snapshot.child("name").getValue(String.class);
-                        // String address = snapshot.child("address").getValue(String.class); // REMOVED
+                        String age = snapshot.child("age").getValue(String.class);
                         String bio = snapshot.child("bio").getValue(String.class);
                         existingImageUrl = snapshot.child("profileImageUrl").getValue(String.class);
 
                         if (name != null) etName.setText(name);
-                        // if (address != null) etAddress.setText(address); // REMOVED
+                        if (age != null) etAge.setText(age);
                         if (bio != null) etBio.setText(bio);
+
 
                         // Interests (stored as a list of strings)
                         List<String> interests = new ArrayList<>();
@@ -172,7 +186,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
         }
 
         String name = etName.getText().toString().trim();
-        // String address = etAddress.getText().toString().trim(); // REMOVED
+        String age = etAge.getText().toString().trim();
         String bio = etBio.getText().toString().trim();
 
         // VALIDATION
@@ -182,8 +196,11 @@ public class ProfileDetailsActivity extends AppCompatActivity {
             return;
         }
 
-        // REMOVED: address validation (we now use GPS)
-        // if (TextUtils.isEmpty(address)) { ... }
+        if (TextUtils.isEmpty(age)) {
+            etAge.setError("Age required");
+            etAge.requestFocus();
+            return;
+        }
 
         if (TextUtils.isEmpty(bio)) {
             etBio.setError("Bio required");
@@ -211,19 +228,15 @@ public class ProfileDetailsActivity extends AppCompatActivity {
 
         btnSave.setEnabled(false);
 
-        // NEW: get location first, then upload/save profile
-        getLocationAndSaveProfile(user, name, bio, interests);
+        // Now we expect location to be fetched already when user tapped Address
+        getLocationAndSaveProfile(user, name, age, bio, interests);
     }
 
     /**
-     * Fetch device location and then continue with image upload + DB write.
+     * Fetch device location when the user taps the Address field
+     * and display "lat, lng" inside the EditText.
      */
-    private void getLocationAndSaveProfile(FirebaseUser user,
-                                           String name,
-                                           String bio,
-                                           List<String> interests) {
-
-        // Permission check
+    private void fetchLocationForAddressField() {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 != android.content.pm.PackageManager.PERMISSION_GRANTED) {
@@ -233,38 +246,48 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     LOCATION_PERMISSION_REQUEST
             );
-
-            Toast.makeText(this,
-                    "Please grant location permission and tap Save again.",
-                    Toast.LENGTH_LONG).show();
-
-            btnSave.setEnabled(true);
             return;
         }
 
         fusedLocationClient.getLastLocation()
                 .addOnSuccessListener(location -> {
-                    double lat = 0.0;
-                    double lng = 0.0;
-
                     if (location != null) {
-                        lat = location.getLatitude();
-                        lng = location.getLongitude();
+                        currentLatitude = location.getLatitude();
+                        currentLongitude = location.getLongitude();
+                        hasLocation = true;
+
+                        String coordsText = currentLatitude + ", " + currentLongitude;
+                        etAddress.setText(coordsText);
                     } else {
                         Toast.makeText(this,
-                                "Could not get location, using 0,0.",
+                                "Could not get location. Make sure GPS is on.",
                                 Toast.LENGTH_SHORT).show();
                     }
-
-                    // Now we have (lat,lng) -> continue with image upload / DB
-                    proceedWithImageAndDatabase(user, name, bio, interests, lat, lng);
                 })
-                .addOnFailureListener(e -> {
-                    btnSave.setEnabled(true);
-                    Toast.makeText(this,
-                            "Failed to get location: " + e.getMessage(),
-                            Toast.LENGTH_LONG).show();
-                });
+                .addOnFailureListener(e -> Toast.makeText(this,
+                        "Failed to get location: " + e.getMessage(),
+                        Toast.LENGTH_LONG).show());
+    }
+
+
+    /**
+     * Fetch device location and then continue with image upload + DB write.
+     */
+    private void getLocationAndSaveProfile(FirebaseUser user,
+                                           String name,
+                                           String age,
+                                           String bio,
+                                           List<String> interests) {
+
+        if (!hasLocation) {
+            Toast.makeText(this,
+                    "Tap the Address field to fetch your location first.",
+                    Toast.LENGTH_SHORT).show();
+            btnSave.setEnabled(true);
+            return;
+        }
+
+        proceedWithImageAndDatabase(user, name, age, bio, interests, currentLatitude, currentLongitude);
     }
 
     /**
@@ -272,21 +295,23 @@ public class ProfileDetailsActivity extends AppCompatActivity {
      */
     private void proceedWithImageAndDatabase(FirebaseUser user,
                                              String name,
+                                             String age,
                                              String bio,
                                              List<String> interests,
                                              double lat,
                                              double lng) {
 
         if (selectedImageUri != null) {
-            uploadImageAndSaveProfile(user, name, bio, interests, lat, lng);
+            uploadImageAndSaveProfile(user, name, age, bio, interests, lat, lng);
         } else {
-            writeProfileToDatabase(user, name, bio, interests, lat, lng, existingImageUrl);
+            writeProfileToDatabase(user, name, age, bio, interests, lat, lng, existingImageUrl);
         }
     }
 
     // upload selected image to Firebase Storage
     private void uploadImageAndSaveProfile(FirebaseUser user,
                                            String name,
+                                           String age,
                                            String bio,
                                            List<String> interests,
                                            double lat,
@@ -302,7 +327,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                 .addOnSuccessListener(taskSnapshot ->
                         userImageRef.getDownloadUrl().addOnSuccessListener(uri -> {
                             String downloadUrl = uri.toString();
-                            writeProfileToDatabase(user, name, bio, interests, lat, lng, downloadUrl);
+                            writeProfileToDatabase(user, name, age, bio, interests, lat, lng, downloadUrl);
                         }))
                 .addOnFailureListener(e -> {
                     btnSave.setEnabled(true);
@@ -315,6 +340,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
     // write all data (including image URL & coordinates) to Realtime DB
     private void writeProfileToDatabase(FirebaseUser user,
                                         String name,
+                                        String age,
                                         String bio,
                                         List<String> interests,
                                         double latitude,
@@ -323,13 +349,13 @@ public class ProfileDetailsActivity extends AppCompatActivity {
 
         Map<String, Object> profileMap = new HashMap<>();
         profileMap.put("name", name);
+        profileMap.put("age", age);
         // profileMap.put("address", address); // REMOVED
         profileMap.put("bio", bio);
         profileMap.put("interests", interests);
         profileMap.put("profileCompleted", true);
         profileMap.put("profileImageUrl", imageUrl == null ? "" : imageUrl);
 
-        // NEW: store coordinates
         profileMap.put("latitude", latitude);
         profileMap.put("longitude", longitude);
 

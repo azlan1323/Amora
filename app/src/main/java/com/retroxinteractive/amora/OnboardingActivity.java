@@ -3,6 +3,7 @@ package com.retroxinteractive.amora;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,6 +28,7 @@ public class OnboardingActivity extends AppCompatActivity {
         ivGetStarted = findViewById(R.id.ivGetStarted);
         ivGetStarted.setOnClickListener(v -> {
             startActivity(new Intent(this, SignInActivity.class));
+            Toast.makeText(this, "Button Clicked", Toast.LENGTH_SHORT).show();
             finish();
         });
     }

@@ -100,6 +100,27 @@
             android:inputType="textPersonName"
             android:layout_marginBottom="16dp" />
 
+        <!-- Age -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Age"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etAge"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_field"
+            android:paddingHorizontal="16dp"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#777777"
+            android:hint="Your age"
+            android:inputType="number"
+            android:layout_marginBottom="16dp" />
+
         <!-- Address -->
         <TextView
             android:layout_width="wrap_content"

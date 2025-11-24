@@ -198,8 +198,6 @@ public class SignInActivity extends AppCompatActivity {
 
         // 1. User NOT logged in → go to Onboarding
         if (currentUser == null) {
-            startActivity(new Intent(SignInActivity.this, OnboardingActivity.class));
-            finish();
             return;
         }
 
