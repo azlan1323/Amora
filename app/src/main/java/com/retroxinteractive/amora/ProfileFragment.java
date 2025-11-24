@@ -1,14 +1,18 @@
 package com.retroxinteractive.amora;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -21,6 +25,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,23 +34,56 @@ import java.util.List;
 
 public class ProfileFragment extends Fragment {
 
+    private static final String ARG_FROM_MAIN_PROFILE = "from_main_profile";
+
+    private boolean openedFromMainProfile = false;
+
     private TextView tvNameAge;
     private TextView tvBio;
     private TextView tvDistance;
 
+    private ImageView imgProfilePhoto;
+    private View containerDistance;
+    private ImageButton btnAddPhoto;
+
     private ImageView imgPhoto1;
     private ImageView imgPhoto2;
 
-    // interest “pills” in your XML
-    private TextView tvInterest1;
-    private TextView tvInterest2;
-    private TextView tvInterest3;
-    private TextView tvInterest4;
-    private TextView tvInterest5;
-    private TextView tvInterest6;
+    // interest pills
+    private TextView tvInterest1, tvInterest2, tvInterest3,
+            tvInterest4, tvInterest5, tvInterest6;
 
-    public ProfileFragment() {
-        // Required empty public constructor
+    private DatabaseReference userRef;
+    private String currentUid;
+
+    private ActivityResultLauncher<String> pickImagesLauncher;
+
+    public ProfileFragment() { }
+
+    public static ProfileFragment newInstance(boolean fromMainProfile) {
+        ProfileFragment fragment = new ProfileFragment();
+        Bundle args = new Bundle();
+        args.putBoolean(ARG_FROM_MAIN_PROFILE, fromMainProfile);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        if (getArguments() != null) {
+            openedFromMainProfile = getArguments().getBoolean(ARG_FROM_MAIN_PROFILE, false);
+        }
+
+        // launcher for multiple images
+        pickImagesLauncher = registerForActivityResult(
+                new ActivityResultContracts.GetMultipleContents(),
+                uris -> {
+                    if (uris == null || uris.isEmpty()) return;
+                    uploadSelectedImages(uris);
+                }
+        );
     }
 
     @Nullable
@@ -55,10 +94,13 @@ public class ProfileFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
 
-        // --- bind views from your XML ---
         tvNameAge   = view.findViewById(R.id.tv_name_age);
         tvBio       = view.findViewById(R.id.tv_bio_description);
         tvDistance  = view.findViewById(R.id.tv_distance);
+
+        imgProfilePhoto = view.findViewById(R.id.img_profile_photo);
+        containerDistance = view.findViewById(R.id.container_distance);
+        btnAddPhoto = view.findViewById(R.id.btn_add_photo);
 
         imgPhoto1   = view.findViewById(R.id.img_photo_1);
         imgPhoto2   = view.findViewById(R.id.img_photo_2);
@@ -70,30 +112,50 @@ public class ProfileFragment extends Fragment {
         tvInterest5 = view.findViewById(R.id.tv_interest_music);
         tvInterest6 = view.findViewById(R.id.tv_interest_painting);
 
-        loadUserProfile();
+        // behaviour when opened from main profile icon
+        if (openedFromMainProfile) {
+            if (containerDistance != null) containerDistance.setVisibility(View.GONE);
+            if (btnAddPhoto != null) {
+                btnAddPhoto.setVisibility(View.VISIBLE);
+                btnAddPhoto.setOnClickListener(v -> {
+                    if (pickImagesLauncher != null) {
+                        pickImagesLauncher.launch("image/*");
+                    }
+                });
+            }
+        } else {
+            if (btnAddPhoto != null) btnAddPhoto.setVisibility(View.GONE);
+        }
 
+        loadUserProfile();
         return view;
     }
+
+    // ------------------ LOAD PROFILE ------------------
 
     private void loadUserProfile() {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser == null) {
-            Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+            if (getContext() != null) {
+                Toast.makeText(getContext(), "User not logged in", Toast.LENGTH_SHORT).show();
+            }
             return;
         }
 
-        String uid = firebaseUser.getUid();
-        DatabaseReference userRef = FirebaseDatabase.getInstance()
+        currentUid = firebaseUser.getUid();
+        userRef = FirebaseDatabase.getInstance()
                 .getReference("users")
-                .child(uid);
+                .child(currentUid);
 
         userRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (!snapshot.exists()) {
-                    Toast.makeText(getContext(),
-                            "Profile not found in database",
-                            Toast.LENGTH_SHORT).show();
+                    if (getContext() != null) {
+                        Toast.makeText(getContext(),
+                                "Profile not found in database",
+                                Toast.LENGTH_SHORT).show();
+                    }
                     return;
                 }
 
@@ -101,32 +163,25 @@ public class ProfileFragment extends Fragment {
                 String bio = snapshot.child("bio").getValue(String.class);
                 String profileImageUrl = snapshot.child("profileImageUrl").getValue(String.class);
 
-                // We only have name (no age yet), so show just name
                 if (!TextUtils.isEmpty(name)) {
-                    tvNameAge.setText(name); // e.g. "Azlan Shahid"
+                    tvNameAge.setText(name);
                 }
-
                 if (!TextUtils.isEmpty(bio)) {
                     tvBio.setText(bio);
                 }
 
-                // Distance – keep XML default for now (0.7 km),
-                // you can replace here once you calculate real distance.
-                // tvDistance.setText("0.7 km");
-
-                // Load the profile image into the photos section
+                // header avatar + first photo from profileImageUrl
                 if (!TextUtils.isEmpty(profileImageUrl) && getContext() != null) {
                     Glide.with(ProfileFragment.this)
                             .load(profileImageUrl)
-                            .into(imgPhoto1);
+                            .into(imgProfilePhoto);
 
-                    // For now reuse for second photo as well
                     Glide.with(ProfileFragment.this)
                             .load(profileImageUrl)
-                            .into(imgPhoto2);
+                            .into(imgPhoto1);
                 }
 
-                // ---- Interests from DB -> 6 text views ----
+                // interests
                 List<String> interests = new ArrayList<>();
                 DataSnapshot interestsSnap = snapshot.child("interests");
                 for (DataSnapshot child : interestsSnap.getChildren()) {
@@ -135,23 +190,31 @@ public class ProfileFragment extends Fragment {
                         interests.add(interest);
                     }
                 }
-
                 applyInterestsToViews(interests);
+
+                // extra photos under users/{uid}/photos
+                List<String> photos = new ArrayList<>();
+                DataSnapshot photosSnap = snapshot.child("photos");
+                for (DataSnapshot child : photosSnap.getChildren()) {
+                    String url = child.getValue(String.class);
+                    if (!TextUtils.isEmpty(url)) {
+                        photos.add(url);
+                    }
+                }
+                applyPhotosToViews(profileImageUrl, photos);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(getContext(),
-                        "Failed to load profile: " + error.getMessage(),
-                        Toast.LENGTH_SHORT).show();
+                if (getContext() != null) {
+                    Toast.makeText(getContext(),
+                            "Failed to load profile: " + error.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
 
-    /**
-     * Fills the six interest pills with the user’s interests.
-     * If fewer than 6 interests, extra pills are hidden.
-     */
     private void applyInterestsToViews(@NonNull List<String> interests) {
         List<TextView> pills = Arrays.asList(
                 tvInterest1, tvInterest2, tvInterest3,
@@ -168,6 +231,67 @@ public class ProfileFragment extends Fragment {
             } else {
                 pill.setVisibility(View.GONE);
             }
+        }
+    }
+
+    private void applyPhotosToViews(@Nullable String profileImageUrl,
+                                    @NonNull List<String> photos) {
+
+        if (getContext() == null) return;
+
+        List<String> all = new ArrayList<>();
+        if (!TextUtils.isEmpty(profileImageUrl)) {
+            all.add(profileImageUrl);
+        }
+        all.addAll(photos);
+
+        if (all.size() > 0) {
+            Glide.with(this).load(all.get(0)).into(imgPhoto1);
+        }
+        if (all.size() > 1) {
+            Glide.with(this).load(all.get(1)).into(imgPhoto2);
+        }
+    }
+
+    // ------------------ UPLOAD PHOTOS ------------------
+
+    private void uploadSelectedImages(@NonNull List<Uri> uris) {
+        if (getContext() == null) return;
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        String uid = user.getUid();
+        DatabaseReference userRefLocal = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(uid);
+
+        StorageReference storageRoot = FirebaseStorage.getInstance()
+                .getReference()
+                .child("user_photos")
+                .child(uid);
+
+        for (Uri uri : uris) {
+            if (uri == null) continue;
+
+            String fileName = System.currentTimeMillis() + "_" +
+                    (uri.getLastPathSegment() != null ? uri.getLastPathSegment() : "photo.jpg");
+
+            StorageReference photoRef = storageRoot.child(fileName);
+
+            photoRef.putFile(uri)
+                    .addOnSuccessListener(taskSnapshot ->
+                            photoRef.getDownloadUrl().addOnSuccessListener(downloadUri -> {
+                                userRefLocal.child("photos").push()
+                                        .setValue(downloadUri.toString());
+                                loadUserProfile(); // refresh
+                            }))
+                    .addOnFailureListener(e -> {
+                        if (getContext() != null) {
+                            Toast.makeText(getContext(),
+                                    "Failed to upload photo: " + e.getMessage(),
+                                    Toast.LENGTH_SHORT).show();
+                        }
+                    });
         }
     }
 }

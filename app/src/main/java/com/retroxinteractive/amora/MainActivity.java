@@ -1,6 +1,7 @@
 package com.retroxinteractive.amora;
 
 import android.os.Bundle;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
@@ -15,7 +16,7 @@ import androidx.fragment.app.Fragment;
 public class MainActivity extends AppCompatActivity {
 
     private ImageView iconHome, iconDiscover, iconChat, iconProfile;
-
+    private View bottomNavBar;
     // keep track of selected tab
     private enum Tab { HOME, DISCOVER, CHAT, PROFILE }
     private Tab currentTab = Tab.HOME;
@@ -41,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
         FrameLayout navDiscover = findViewById(R.id.nav_discover);
         FrameLayout navChat = findViewById(R.id.nav_chat);
         FrameLayout navProfile = findViewById(R.id.nav_profile);
+        bottomNavBar = (View) navHome.getParent();
 
         // default fragment (Home)
         if (savedInstanceState == null) {
@@ -67,7 +69,7 @@ public class MainActivity extends AppCompatActivity {
                 fragment = new ChatFragment();
                 break;
             case PROFILE:
-                fragment = new ProfileFragment();
+                fragment = ProfileFragment.newInstance(true); // opened from main profile icon
                 break;
             case HOME:
             default:
@@ -80,6 +82,11 @@ public class MainActivity extends AppCompatActivity {
                 .beginTransaction()
                 .replace(R.id.main_fragment_container, fragment)
                 .commit();
+
+            // show / hide bottom nav
+        if (bottomNavBar != null) {
+            bottomNavBar.setVisibility(tab == Tab.PROFILE ? View.GONE : View.VISIBLE);
+        }
 
         // update icons
         setActiveIcon(tab);

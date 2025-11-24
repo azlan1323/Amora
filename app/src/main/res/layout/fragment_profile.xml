@@ -93,14 +93,14 @@
                     <!-- Hidden for now (no small avatar in figma header) -->
                     <ImageView
                         android:id="@+id/img_profile_photo"
-                        android:layout_width="0dp"
-                        android:layout_height="0dp"
-                        android:visibility="gone"
+                        android:layout_width="76dp"
+                        android:layout_height="76dp"
                         android:scaleType="centerCrop"
                         android:src="@drawable/profile_photo"
                         app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintBottom_toBottomOf="parent" />
-                    
+
+
 
                     <!-- NOTE: Audio container removed completely -->
 
@@ -317,15 +317,34 @@
                 </LinearLayout>
 
                 <!-- Photos Section -->
-                <TextView
-                    android:id="@+id/tv_photos_heading"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:id="@+id/photos_header_row"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:text="Photos"
-                    android:textColor="#FFFFFF"
-                    android:textStyle="bold"
-                    android:textSize="16sp" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tv_photos_heading"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Photos"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:textSize="16sp" />
+
+                    <ImageButton
+                        android:id="@+id/btn_add_photo"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="@android:color/transparent"
+                        android:contentDescription="add_photo"
+                        android:src="@drawable/ic_more_button"
+                    android:visibility="gone" />
+                </LinearLayout>
+
 
                 <LinearLayout
                     android:id="@+id/photos_row"
