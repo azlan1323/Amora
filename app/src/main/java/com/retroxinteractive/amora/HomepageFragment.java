@@ -1,10 +1,12 @@
 package com.retroxinteractive.amora;
 
+import android.graphics.Picture;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -14,6 +16,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -24,6 +27,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class HomepageFragment extends Fragment {
 
@@ -34,7 +38,17 @@ public class HomepageFragment extends Fragment {
     private DatabaseReference usersRef;
     private ValueEventListener usersListener;
     private TextView tvLocation;
+    private ImageView img_avatar;
     FirebaseUser currentUser;
+
+    private TextView tabForYou, tabNearby;
+
+    // Data
+    private final List<UserProfile> allProfiles = new ArrayList<>();
+    private final List<UserProfile> nearbyProfiles = new ArrayList<>();
+
+    // State: which tab is active
+    private boolean showingNearby = false;
 
     @Nullable
     @Override
@@ -65,6 +79,7 @@ public class HomepageFragment extends Fragment {
         usersRef = FirebaseDatabase.getInstance().getReference("users");
 
         tvLocation = view.findViewById(R.id.tv_location);
+        img_avatar = view.findViewById(R.id.img_avatar);
 
         currentUser = mAuth.getCurrentUser();
         if (currentUser == null) {
@@ -72,19 +87,38 @@ public class HomepageFragment extends Fragment {
             return;
         }
 
-        setAddressField();
+        setFields();
         attachUsersListener(currentUser.getUid());
+
+        tabForYou = view.findViewById(R.id.tab_for_you);
+        tabNearby = view.findViewById(R.id.tab_nearby);
+
+        // Tab clicks
+        tabForYou.setOnClickListener(v -> {
+            showingNearby = false;
+            updateTabStyles();
+            applyCurrentFilter();
+        });
+
+        tabNearby.setOnClickListener(v -> {
+            showingNearby = true;
+            updateTabStyles();
+            applyCurrentFilter();
+        });
+
+        // initial style (For You selected)
+        updateTabStyles();
     }
 
-    private void setAddressField() {
+    private void setFields() {
         String uid = currentUser.getUid();
 
-        DatabaseReference ref = FirebaseDatabase.getInstance()
+        DatabaseReference addressRef = FirebaseDatabase.getInstance()
                 .getReference("users")
                 .child(uid)
                 .child("address");
 
-        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+        addressRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 String address = snapshot.getValue(String.class);
@@ -92,6 +126,31 @@ public class HomepageFragment extends Fragment {
                     // use address
                     Log.d("USER_ADDRESS", "Address: " + address);
                     tvLocation.setText(address);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
+
+        DatabaseReference pictureRef = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(uid)
+                .child("profileImageUrl");
+
+        pictureRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String picture = snapshot.getValue(String.class);
+                if (picture != null) {
+                    // use address
+                    Log.d("Profile Picture URL: ", "Picture" + picture);
+                    Glide.with(Objects.requireNonNull(getContext()))
+                            .load(picture)
+                            .placeholder(R.drawable.ic_nav_profile)
+                            .centerCrop()
+                            .into(img_avatar);
                 }
             }
 
@@ -136,6 +195,9 @@ public class HomepageFragment extends Fragment {
 
                 List<UserProfile> result = new ArrayList<>();
 
+                allProfiles.clear();
+                nearbyProfiles.clear();
+
                 for (DataSnapshot child : snapshot.getChildren()) {
                     String uid = child.getKey();
                     if (uid == null || uid.equals(currentUid)) {
@@ -170,6 +232,7 @@ public class HomepageFragment extends Fragment {
                     }
 
 // Distance
+                    // Distance
                     Double distance = null;
                     if (haveMyLocation) {
                         Double lat = child.child("latitude").getValue(Double.class);
@@ -189,14 +252,22 @@ public class HomepageFragment extends Fragment {
                     profile.setDistanceKm(distance);
                     profile.setInterests(interests);
 
-                    // NEW: compute and store match percent
+// Match percent
                     int matchPercent = calculateMatchPercent(myInterests, interests);
                     profile.setMatchPercent(matchPercent);
 
                     result.add(profile);
+
+                    allProfiles.add(profile);
+
+// Nearby: distance < 5km
+                    if (distance != null && distance < 5.0) {
+                        nearbyProfiles.add(profile);
+                    }
                 }
 
-                adapter.setProfiles(result);
+                // After the loop:
+                updateCountsAndApplyCurrentFilter();
             }
 
             @Override
@@ -211,6 +282,35 @@ public class HomepageFragment extends Fragment {
         };
 
         usersRef.addValueEventListener(usersListener);
+    }
+
+    private void updateCountsAndApplyCurrentFilter() {
+        // Update the labels like "For You (10)" and "Nearby (3)"
+        tabForYou.setText("For You (" + allProfiles.size() + ")");
+        tabNearby.setText("Nearby (" + nearbyProfiles.size() + ")");
+
+        applyCurrentFilter();
+    }
+
+    private void applyCurrentFilter() {
+        if (adapter == null) return;
+
+        if (showingNearby) {
+            adapter.setProfiles(nearbyProfiles);
+        } else {
+            adapter.setProfiles(allProfiles);
+        }
+    }
+
+    private void updateTabStyles() {
+        // Highlight selected tab with white text, dim the other
+        if (showingNearby) {
+            tabNearby.setTextColor(0xFFFFFFFF);       // white
+            tabForYou.setTextColor(0x80FFFFFF);       // 50% white
+        } else {
+            tabForYou.setTextColor(0xFFFFFFFF);
+            tabNearby.setTextColor(0x80FFFFFF);
+        }
     }
 
     /**
