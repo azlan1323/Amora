@@ -85,21 +85,21 @@
                     android:id="@+id/profile_header_content"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="16dp"
-                    android:paddingTop="56dp">
+                    >
 
                     <!-- Hidden for now (no small avatar in figma header) -->
                     <ImageView
                         android:id="@+id/img_profile_photo"
-                        android:layout_width="76dp"
-                        android:layout_height="76dp"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_marginBottom="4dp"
                         android:scaleType="centerCrop"
                         android:src="@drawable/profile_photo"
+                        app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintBottom_toBottomOf="parent" />
-
+                        app:layout_constraintLeft_toLeftOf="parent"
+                        app:layout_constraintRight_toRightOf="parent"
+                        />
 
 
                     <!-- NOTE: Audio container removed completely -->
