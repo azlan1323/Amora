@@ -307,6 +307,11 @@ public class DiscoverFragment extends Fragment {
      * Currently passes the user's uid as param1 to ProfileFragment.
      */
     private void openUserProfile(@NonNull UserProfile profile) {
+        // Hide bottom nav while viewing someone else's profile
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).setBottomNavVisible(false);
+        }
+
         ProfileFragment fragment = ProfileFragment.newInstance(profile.uid, null);
 
         requireActivity().getSupportFragmentManager()
@@ -315,6 +320,7 @@ public class DiscoverFragment extends Fragment {
                 .addToBackStack("discover_to_profile")
                 .commit();
     }
+
 
     // ───────────────────── ADAPTER ─────────────────────
 

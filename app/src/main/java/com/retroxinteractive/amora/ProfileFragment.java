@@ -103,6 +103,16 @@ public class ProfileFragment extends Fragment {
         );
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+
+        // If this was an "other user's" profile, restore the bottom nav
+        if (!openedFromMainProfile && getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).setBottomNavVisible(true);
+        }
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,

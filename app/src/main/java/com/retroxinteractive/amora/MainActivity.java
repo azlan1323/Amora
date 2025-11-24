@@ -17,6 +17,9 @@ public class MainActivity extends AppCompatActivity {
     private FrameLayout navHome, navDiscover, navChat, navProfile;
     private ImageView iconHome, iconDiscover, iconChat, iconProfile;
 
+    private View bottomNavBar;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
         navDiscover = findViewById(R.id.nav_discover);
         navChat = findViewById(R.id.nav_chat);
         navProfile = findViewById(R.id.nav_profile);
+        bottomNavBar = (View) navHome.getParent();
 
         iconHome = findViewById(R.id.icon_home);
         iconDiscover = findViewById(R.id.icon_discover);
@@ -109,5 +113,11 @@ public class MainActivity extends AppCompatActivity {
                 .replace(R.id.main_fragment_container, fragment)
                 .addToBackStack(null)
                 .commit();
+    }
+
+    public void setBottomNavVisible(boolean visible) {
+        if (bottomNavBar != null) {
+            bottomNavBar.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
     }
 }
