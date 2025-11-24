@@ -63,7 +63,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         navProfile.setOnClickListener(v -> {
-            switchToFragment(new ProfileFragment());
+            // Open *own* profile
+            switchToFragment(ProfileFragment.newInstance(true));
             highlightTab("profile");
         });
     }
