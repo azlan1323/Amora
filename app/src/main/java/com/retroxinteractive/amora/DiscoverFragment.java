@@ -87,12 +87,6 @@ public class DiscoverFragment extends Fragment {
         // Filter button click → open popup menu with interests
         filterBtnTop.setOnClickListener(v -> showFilterMenu());
 
-        availableFilters.add("Art");
-        availableFilters.add("Traveling");
-        availableFilters.add("Cooking");
-        availableFilters.add("Gaming");
-        availableFilters.add("Music");
-
         return root;
     }
 
@@ -145,6 +139,7 @@ public class DiscoverFragment extends Fragment {
                         String interest = iSnap.getValue(String.class);
                         if (interest != null && !interest.trim().isEmpty()) {
                             interests.add(interest);
+                            availableFilters.add(interest);
                         }
                     }
 
