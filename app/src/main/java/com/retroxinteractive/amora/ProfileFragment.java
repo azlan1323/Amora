@@ -1,5 +1,6 @@
 package com.retroxinteractive.amora;
 
+import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -8,6 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,8 +45,10 @@ public class ProfileFragment extends Fragment {
     private View containerDistance, bottomActionBar;
     private ImageButton btnAddPhoto;
 
-    private ImageView imgPhoto1, imgPhoto2;
+    // dynamic photos container
+    private LinearLayout photosContainer;
 
+    // interest pills
     private TextView tvInterest1, tvInterest2, tvInterest3,
             tvInterest4, tvInterest5, tvInterest6;
 
@@ -71,6 +75,7 @@ public class ProfileFragment extends Fragment {
             openedFromMainProfile = getArguments().getBoolean(ARG_FROM_MAIN_PROFILE, false);
         }
 
+        // image picker for multiple photos
         pickImagesLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetMultipleContents(),
                 uris -> {
@@ -91,13 +96,13 @@ public class ProfileFragment extends Fragment {
         tvNameAge = view.findViewById(R.id.tv_name_age);
         tvBio = view.findViewById(R.id.tv_bio_description);
         tvDistance = view.findViewById(R.id.tv_distance);
+
         imgProfilePhoto = view.findViewById(R.id.img_profile_photo);
         containerDistance = view.findViewById(R.id.container_distance);
         bottomActionBar = view.findViewById(R.id.bottom_bar);
         btnAddPhoto = view.findViewById(R.id.btn_add_photo);
 
-        imgPhoto1 = view.findViewById(R.id.img_photo_1);
-        imgPhoto2 = view.findViewById(R.id.img_photo_2);
+        photosContainer = view.findViewById(R.id.photos_container);
 
         tvInterest1 = view.findViewById(R.id.tv_interest_actress);
         tvInterest2 = view.findViewById(R.id.tv_interest_modeling);
@@ -106,22 +111,22 @@ public class ProfileFragment extends Fragment {
         tvInterest5 = view.findViewById(R.id.tv_interest_music);
         tvInterest6 = view.findViewById(R.id.tv_interest_painting);
 
-        // If opened from main profile:
         if (openedFromMainProfile) {
+            if (containerDistance != null) containerDistance.setVisibility(View.GONE);
 
-            // hide distance
-            containerDistance.setVisibility(View.GONE);
+            if (btnAddPhoto != null) {
+                btnAddPhoto.setVisibility(View.VISIBLE);
+                btnAddPhoto.setOnClickListener(v -> {
+                    if (pickImagesLauncher != null) {
+                        pickImagesLauncher.launch("image/*");
+                    }
+                });
+            }
 
-            // show add-photo button
-            btnAddPhoto.setVisibility(View.VISIBLE);
-            btnAddPhoto.setOnClickListener(v -> pickImagesLauncher.launch("image/*"));
-
-            // hide heart/chat action bar
-            bottomActionBar.setVisibility(View.GONE);
-
+            if (bottomActionBar != null) bottomActionBar.setVisibility(View.GONE);
         } else {
-            btnAddPhoto.setVisibility(View.GONE);
-            bottomActionBar.setVisibility(View.VISIBLE);
+            if (btnAddPhoto != null) btnAddPhoto.setVisibility(View.GONE);
+            if (bottomActionBar != null) bottomActionBar.setVisibility(View.VISIBLE);
         }
 
         loadUserProfile();
@@ -134,7 +139,9 @@ public class ProfileFragment extends Fragment {
         if (firebaseUser == null) return;
 
         currentUid = firebaseUser.getUid();
-        userRef = FirebaseDatabase.getInstance().getReference("users").child(currentUid);
+        userRef = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(currentUid);
 
         userRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -149,70 +156,143 @@ public class ProfileFragment extends Fragment {
                 if (!TextUtils.isEmpty(name)) tvNameAge.setText(name);
                 if (!TextUtils.isEmpty(bio)) tvBio.setText(bio);
 
-                // Load header photo FULLSCREEN
-                if (!TextUtils.isEmpty(profileImageUrl)) {
+                // fullscreen header image
+                if (!TextUtils.isEmpty(profileImageUrl) && getContext() != null) {
                     Glide.with(ProfileFragment.this)
                             .load(profileImageUrl)
                             .centerCrop()
                             .into(imgProfilePhoto);
-
-                    Glide.with(ProfileFragment.this)
-                            .load(profileImageUrl)
-                            .into(imgPhoto1);
                 }
 
-                // Interests
+                // interests
                 List<String> interests = new ArrayList<>();
-                for (DataSnapshot child : snapshot.child("interests").getChildren()) {
+                DataSnapshot interestsSnap = snapshot.child("interests");
+                for (DataSnapshot child : interestsSnap.getChildren()) {
                     String interest = child.getValue(String.class);
                     if (!TextUtils.isEmpty(interest)) interests.add(interest);
                 }
                 applyInterestsToViews(interests);
 
-                // Extra photos
+                // extra photos list
                 List<String> photos = new ArrayList<>();
-                for (DataSnapshot child : snapshot.child("photos").getChildren()) {
+                DataSnapshot photosSnap = snapshot.child("photos");
+                for (DataSnapshot child : photosSnap.getChildren()) {
                     String url = child.getValue(String.class);
                     if (!TextUtils.isEmpty(url)) photos.add(url);
                 }
+
                 applyPhotosToViews(profileImageUrl, photos);
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) { }
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (getContext() != null) {
+                    Toast.makeText(getContext(),
+                            "Failed to load profile: " + error.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                }
+            }
         });
     }
 
-    private void applyInterestsToViews(List<String> interests) {
-        List<TextView> pills = Arrays.asList(tvInterest1, tvInterest2, tvInterest3,
-                tvInterest4, tvInterest5, tvInterest6);
+    private void applyInterestsToViews(@NonNull List<String> interests) {
+        List<TextView> pills = Arrays.asList(
+                tvInterest1, tvInterest2, tvInterest3,
+                tvInterest4, tvInterest5, tvInterest6
+        );
 
         for (int i = 0; i < pills.size(); i++) {
+            TextView pill = pills.get(i);
             if (i < interests.size()) {
-                pills.get(i).setText(interests.get(i));
-                pills.get(i).setVisibility(View.VISIBLE);
+                pill.setText(interests.get(i));
+                pill.setVisibility(View.VISIBLE);
             } else {
-                pills.get(i).setVisibility(View.GONE);
+                pill.setVisibility(View.GONE);
             }
         }
     }
 
-    private void applyPhotosToViews(String profileImageUrl, List<String> photos) {
+    /**
+     * Creates rows of 2 images each and fills them with all available photo URLs.
+     * First we include profileImageUrl (if present), then all extra photos.
+     */
+    private void applyPhotosToViews(@Nullable String profileImageUrl,
+                                    @NonNull List<String> photos) {
+        if (photosContainer == null || getContext() == null) return;
+
+        // Build combined list: profile image + extra photos
         List<String> all = new ArrayList<>();
-        if (!TextUtils.isEmpty(profileImageUrl)) all.add(profileImageUrl);
+        if (!TextUtils.isEmpty(profileImageUrl)) {
+            all.add(profileImageUrl);
+        }
         all.addAll(photos);
 
-        if (all.size() > 0)
-            Glide.with(this).load(all.get(0)).into(imgPhoto1);
+        photosContainer.removeAllViews();
 
-        if (all.size() > 1)
-            Glide.with(this).load(all.get(1)).into(imgPhoto2);
+        if (all.isEmpty()) return;
+
+        Context ctx = getContext();
+        int imageHeight = dpToPx(140);
+        int imageMargin = dpToPx(8);
+
+        for (int i = 0; i < all.size(); i += 2) {
+            LinearLayout row = new LinearLayout(ctx);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            LinearLayout.LayoutParams rowParams =
+                    new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT);
+            if (i > 0) {
+                rowParams.topMargin = imageMargin;
+            }
+            row.setLayoutParams(rowParams);
+
+            // first image in row
+            String url1 = all.get(i);
+            ImageView iv1 = createPhotoImageView(ctx, imageHeight, imageMargin, true);
+            Glide.with(this).load(url1).centerCrop().into(iv1);
+            row.addView(iv1);
+
+            // second image in row (if exists)
+            if (i + 1 < all.size()) {
+                String url2 = all.get(i + 1);
+                ImageView iv2 = createPhotoImageView(ctx, imageHeight, imageMargin, false);
+                Glide.with(this).load(url2).centerCrop().into(iv2);
+                row.addView(iv2);
+            } else {
+                // optional: add empty spacer to keep layout balanced
+                View spacer = new View(ctx);
+                LinearLayout.LayoutParams spacerParams =
+                        new LinearLayout.LayoutParams(0, imageHeight, 1f);
+                spacerParams.leftMargin = imageMargin;
+                spacer.setLayoutParams(spacerParams);
+                row.addView(spacer);
+            }
+
+            photosContainer.addView(row);
+        }
     }
 
-    // ------------------ UPLOAD ------------------
-    private void uploadSelectedImages(List<Uri> uris) {
+    private ImageView createPhotoImageView(Context ctx, int heightPx,
+                                           int marginPx, boolean isLeft) {
+        ImageView iv = new ImageView(ctx);
+        LinearLayout.LayoutParams lp =
+                new LinearLayout.LayoutParams(0, heightPx, 1f);
+        if (isLeft) {
+            lp.rightMargin = marginPx;
+        } else {
+            lp.leftMargin = marginPx;
+        }
+        iv.setLayoutParams(lp);
+        iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        iv.setBackgroundResource(R.drawable.profile_bg); // keeps the same rounded card look
+        return iv;
+    }
+
+    // ------------------ UPLOAD PHOTOS ------------------
+    private void uploadSelectedImages(@NonNull List<Uri> uris) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null) return;
+        if (user == null || getContext() == null) return;
 
         String uid = user.getUid();
         DatabaseReference userRefLocal =
@@ -222,7 +302,11 @@ public class ProfileFragment extends Fragment {
                 FirebaseStorage.getInstance().getReference("user_photos").child(uid);
 
         for (Uri uri : uris) {
-            String fileName = System.currentTimeMillis() + ".jpg";
+            if (uri == null) continue;
+
+            String fileName = System.currentTimeMillis() + "_" +
+                    (uri.getLastPathSegment() != null ? uri.getLastPathSegment() : "photo.jpg");
+
             StorageReference photoRef = storageRoot.child(fileName);
 
             photoRef.putFile(uri)
@@ -230,13 +314,19 @@ public class ProfileFragment extends Fragment {
                             photoRef.getDownloadUrl().addOnSuccessListener(downloadUri -> {
                                 userRefLocal.child("photos").push()
                                         .setValue(downloadUri.toString());
-                                loadUserProfile();
+                                loadUserProfile(); // refresh grid
                             }))
-                    .addOnFailureListener(e -> {
-                        Toast.makeText(getContext(),
-                                "Failed to upload photo: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show();
-                    });
+                    .addOnFailureListener(e ->
+                            Toast.makeText(getContext(),
+                                    "Failed to upload photo: " + e.getMessage(),
+                                    Toast.LENGTH_SHORT).show());
         }
+    }
+
+    // ------------------ UTIL ------------------
+    private int dpToPx(int dp) {
+        if (getResources() == null) return dp;
+        float density = getResources().getDisplayMetrics().density;
+        return (int) (dp * density + 0.5f);
     }
 }
