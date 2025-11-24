@@ -179,6 +179,10 @@ public class DiscoverFragment extends Fragment {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
+                if (!isAdded() || getContext() == null) {
+                    return; // Stop execution if the fragment is dead
+                }
+
                 Toast.makeText(requireContext(),
                         "Failed to load users: " + error.getMessage(),
                         Toast.LENGTH_LONG).show();

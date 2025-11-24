@@ -192,7 +192,7 @@ public class SignInActivity extends AppCompatActivity {
     private void updateUI(@Nullable FirebaseUser user) {
         if (user != null) {
             // TODO: replace HomeActivity with your actual main activity
-            Intent intent = new Intent(this, TempActivity.class);
+            Intent intent = new Intent(this, ProfileDetailsActivity.class);
             startActivity(intent);
             finish(); // close SignInActivity
         }
