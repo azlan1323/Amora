@@ -37,15 +37,17 @@ import java.util.List;
 public class ProfileFragment extends Fragment {
 
     private static final String ARG_FROM_MAIN_PROFILE = "from_main_profile";
+    private static final String ARG_USER_ID = "user_id";
 
+    // true = opened from MainActivity (own profile)
     private boolean openedFromMainProfile = false;
+    // uid of user whose profile we are viewing (null = current user)
+    private String viewedUserId;
 
     private TextView tvNameAge, tvBio, tvDistance;
     private ImageView imgProfilePhoto;
     private View containerDistance, bottomActionBar;
     private ImageButton btnAddPhoto;
-
-    // dynamic photos container
     private LinearLayout photosContainer;
 
     // interest pills
@@ -57,12 +59,26 @@ public class ProfileFragment extends Fragment {
 
     private ActivityResultLauncher<String> pickImagesLauncher;
 
-    public ProfileFragment() { }
+    public ProfileFragment() {
+        // Required empty public constructor
+    }
 
+    // Used for own profile from MainActivity tab
     public static ProfileFragment newInstance(boolean fromMainProfile) {
         ProfileFragment fragment = new ProfileFragment();
         Bundle args = new Bundle();
         args.putBoolean(ARG_FROM_MAIN_PROFILE, fromMainProfile);
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+    // Used from DiscoverFragment: newInstance(profile.uid, null)
+    public static ProfileFragment newInstance(@NonNull String userId, @Nullable String ignored) {
+        ProfileFragment fragment = new ProfileFragment();
+        Bundle args = new Bundle();
+        // viewing other user, not main profile
+        args.putBoolean(ARG_FROM_MAIN_PROFILE, false);
+        args.putString(ARG_USER_ID, userId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -73,14 +89,16 @@ public class ProfileFragment extends Fragment {
 
         if (getArguments() != null) {
             openedFromMainProfile = getArguments().getBoolean(ARG_FROM_MAIN_PROFILE, false);
+            viewedUserId = getArguments().getString(ARG_USER_ID);
         }
 
-        // image picker for multiple photos
+        // image picker for multiple photos (only used for own profile)
         pickImagesLauncher = registerForActivityResult(
                 new ActivityResultContracts.GetMultipleContents(),
                 uris -> {
-                    if (uris == null || uris.isEmpty()) return;
-                    uploadSelectedImages(uris);
+                    if (uris != null && !uris.isEmpty()) {
+                        uploadSelectedImages(uris);
+                    }
                 }
         );
     }
@@ -111,9 +129,20 @@ public class ProfileFragment extends Fragment {
         tvInterest5 = view.findViewById(R.id.tv_interest_music);
         tvInterest6 = view.findViewById(R.id.tv_interest_painting);
 
-        if (openedFromMainProfile) {
-            if (containerDistance != null) containerDistance.setVisibility(View.GONE);
+        // Back button in top bar
+        ImageButton btnBack = view.findViewById(R.id.btn_back);
+        if (btnBack != null) {
+            btnBack.setOnClickListener(v ->
+                    requireActivity().getOnBackPressedDispatcher().onBackPressed()
+            );
+        }
 
+        // UI behaviour based on whether this is my profile or someone else's
+        if (openedFromMainProfile) {
+            // Own profile
+            if (containerDistance != null) {
+                containerDistance.setVisibility(View.GONE);
+            }
             if (btnAddPhoto != null) {
                 btnAddPhoto.setVisibility(View.VISIBLE);
                 btnAddPhoto.setOnClickListener(v -> {
@@ -122,11 +151,20 @@ public class ProfileFragment extends Fragment {
                     }
                 });
             }
-
-            if (bottomActionBar != null) bottomActionBar.setVisibility(View.GONE);
+            if (bottomActionBar != null) {
+                bottomActionBar.setVisibility(View.GONE);
+            }
         } else {
-            if (btnAddPhoto != null) btnAddPhoto.setVisibility(View.GONE);
-            if (bottomActionBar != null) bottomActionBar.setVisibility(View.VISIBLE);
+            // Viewing someone else
+            if (containerDistance != null) {
+                containerDistance.setVisibility(View.VISIBLE);
+            }
+            if (btnAddPhoto != null) {
+                btnAddPhoto.setVisibility(View.GONE);
+            }
+            if (bottomActionBar != null) {
+                bottomActionBar.setVisibility(View.VISIBLE);
+            }
         }
 
         loadUserProfile();
@@ -138,7 +176,15 @@ public class ProfileFragment extends Fragment {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser == null) return;
 
-        currentUid = firebaseUser.getUid();
+        String authUid = firebaseUser.getUid();
+
+        // Decide whose profile to show
+        if (openedFromMainProfile || TextUtils.isEmpty(viewedUserId)) {
+            currentUid = authUid;
+        } else {
+            currentUid = viewedUserId;
+        }
+
         userRef = FirebaseDatabase.getInstance()
                 .getReference("users")
                 .child(currentUid);
@@ -153,8 +199,12 @@ public class ProfileFragment extends Fragment {
                 String bio = snapshot.child("bio").getValue(String.class);
                 String profileImageUrl = snapshot.child("profileImageUrl").getValue(String.class);
 
-                if (!TextUtils.isEmpty(name)) tvNameAge.setText(name);
-                if (!TextUtils.isEmpty(bio)) tvBio.setText(bio);
+                if (!TextUtils.isEmpty(name)) {
+                    tvNameAge.setText(name);
+                }
+                if (!TextUtils.isEmpty(bio)) {
+                    tvBio.setText(bio);
+                }
 
                 // fullscreen header image
                 if (!TextUtils.isEmpty(profileImageUrl) && getContext() != null) {
@@ -169,16 +219,20 @@ public class ProfileFragment extends Fragment {
                 DataSnapshot interestsSnap = snapshot.child("interests");
                 for (DataSnapshot child : interestsSnap.getChildren()) {
                     String interest = child.getValue(String.class);
-                    if (!TextUtils.isEmpty(interest)) interests.add(interest);
+                    if (!TextUtils.isEmpty(interest)) {
+                        interests.add(interest);
+                    }
                 }
                 applyInterestsToViews(interests);
 
-                // extra photos list
+                // extra photos
                 List<String> photos = new ArrayList<>();
                 DataSnapshot photosSnap = snapshot.child("photos");
                 for (DataSnapshot child : photosSnap.getChildren()) {
                     String url = child.getValue(String.class);
-                    if (!TextUtils.isEmpty(url)) photos.add(url);
+                    if (!TextUtils.isEmpty(url)) {
+                        photos.add(url);
+                    }
                 }
 
                 applyPhotosToViews(profileImageUrl, photos);
@@ -220,7 +274,6 @@ public class ProfileFragment extends Fragment {
                                     @NonNull List<String> photos) {
         if (photosContainer == null || getContext() == null) return;
 
-        // Build combined list: profile image + extra photos
         List<String> all = new ArrayList<>();
         if (!TextUtils.isEmpty(profileImageUrl)) {
             all.add(profileImageUrl);
@@ -228,7 +281,6 @@ public class ProfileFragment extends Fragment {
         all.addAll(photos);
 
         photosContainer.removeAllViews();
-
         if (all.isEmpty()) return;
 
         Context ctx = getContext();
@@ -241,7 +293,8 @@ public class ProfileFragment extends Fragment {
             LinearLayout.LayoutParams rowParams =
                     new LinearLayout.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT);
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                    );
             if (i > 0) {
                 rowParams.topMargin = imageMargin;
             }
@@ -260,7 +313,7 @@ public class ProfileFragment extends Fragment {
                 Glide.with(this).load(url2).centerCrop().into(iv2);
                 row.addView(iv2);
             } else {
-                // optional: add empty spacer to keep layout balanced
+                // spacer for alignment
                 View spacer = new View(ctx);
                 LinearLayout.LayoutParams spacerParams =
                         new LinearLayout.LayoutParams(0, imageHeight, 1f);
@@ -285,11 +338,11 @@ public class ProfileFragment extends Fragment {
         }
         iv.setLayoutParams(lp);
         iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        iv.setBackgroundResource(R.drawable.profile_bg); // keeps the same rounded card look
+        iv.setBackgroundResource(R.drawable.profile_bg);
         return iv;
     }
 
-    // ------------------ UPLOAD PHOTOS ------------------
+    // ------------------ UPLOAD PHOTOS (only for own profile) ------------------
     private void uploadSelectedImages(@NonNull List<Uri> uris) {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null || getContext() == null) return;

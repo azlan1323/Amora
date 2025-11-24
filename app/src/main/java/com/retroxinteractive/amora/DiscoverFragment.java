@@ -107,7 +107,7 @@ public class DiscoverFragment extends Fragment {
                         hasCurrentLocation = true;
                     }
 
-                    // Read my interests for matching
+                    // Load my interests (for match %)
                     myInterests.clear();
                     DataSnapshot myInterestsSnap = snapshot.child("interests");
                     for (DataSnapshot iSnap : myInterestsSnap.getChildren()) {
@@ -163,17 +163,28 @@ public class DiscoverFragment extends Fragment {
                     Double lat = child.child("latitude").getValue(Double.class);
                     Double lng = child.child("longitude").getValue(Double.class);
 
-                    // Age can be stored as number or string in Firebase, so read it generically
+                    // Age: you might be storing "age" as a number or deriving from dob
                     int age = 0;
-                    DataSnapshot ageSnap = child.child("age");
-                    if (ageSnap.exists()) {
+                    if (child.child("age").getValue() != null) {
                         try {
-                            String ageStr = String.valueOf(ageSnap.getValue());  // works for "23" or 23
-                            if (!TextUtils.isEmpty(ageStr)) {
-                                age = Integer.parseInt(ageStr);
+                            Long ageLong = child.child("age").getValue(Long.class);
+                            if (ageLong != null) {
+                                age = ageLong.intValue();
                             }
-                        } catch (NumberFormatException e) {
-                            age = 0; // fallback if malformed
+                        } catch (Exception e) {
+                            // fallback
+                            age = 0;
+                        }
+                    } else if (child.child("dob").getValue() != null) {
+                        // Example if dob is "1999-01-01" and you want to compute age
+                        try {
+                            String dobStr = child.child("dob").getValue(String.class);
+                            if (!TextUtils.isEmpty(dobStr)) {
+                                // TODO: parse dobStr if you implement actual age calculation
+                                age = 0;
+                            }
+                        } catch (Exception e) {
+                            age = 0; // fallback
                         }
                     }
 
@@ -194,7 +205,7 @@ public class DiscoverFragment extends Fragment {
                         distanceKm = calculateDistanceKm(currentLat, currentLng, lat, lng);
                     }
 
-                    // NEW: compute match percent using helper
+                    // compute match percent using helper
                     int matchPercent = calculateMatchPercent(myInterests, otherInterests);
 
                     UserProfile profile = new UserProfile();
@@ -219,19 +230,19 @@ public class DiscoverFragment extends Fragment {
                     return; // Stop execution if the fragment is dead
                 }
 
-                Toast.makeText(requireContext(),
+                Toast.makeText(getContext(),
                         "Failed to load users: " + error.getMessage(),
-                        Toast.LENGTH_LONG).show();
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     /**
-     * Haversine formula – distance in km between two lat/lon pairs.
+     * Great-circle distance (in km) using Haversine formula.
      */
     private double calculateDistanceKm(double lat1, double lon1,
                                        double lat2, double lon2) {
-        double R = 6371.0; // Earth radius in km
+        final double R = 6371.0; // km
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
@@ -265,14 +276,11 @@ public class DiscoverFragment extends Fragment {
         int common = 0;
         for (String mine : myInterests) {
             if (mine == null || mine.trim().isEmpty()) continue;
-            String mineNorm = mine.trim().toLowerCase();
-
-            // see if other user has this interest (case-insensitive)
             for (String other : otherInterests) {
                 if (other == null || other.trim().isEmpty()) continue;
-                if (mineNorm.equals(other.trim().toLowerCase())) {
+                if (mine.equalsIgnoreCase(other)) {
                     common++;
-                    break; // avoid double-counting
+                    break;
                 }
             }
         }
@@ -292,6 +300,20 @@ public class DiscoverFragment extends Fragment {
         double distanceKm;   // -1 if unknown
         int matchPercent;    // 0–100
         List<String> interests;
+    }
+
+    /**
+     * Open full profile screen for the selected user.
+     * Currently passes the user's uid as param1 to ProfileFragment.
+     */
+    private void openUserProfile(@NonNull UserProfile profile) {
+        ProfileFragment fragment = ProfileFragment.newInstance(profile.uid, null);
+
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.main_fragment_container, fragment)
+                .addToBackStack("discover_to_profile")
+                .commit();
     }
 
     // ───────────────────── ADAPTER ─────────────────────
@@ -354,10 +376,8 @@ public class DiscoverFragment extends Fragment {
                 holder.imgTopArea.setImageResource(0); // or a placeholder
             }
 
-            // Click listener – later you can open full details / chat
-            holder.itemView.setOnClickListener(v -> {
-                // TODO: open details screen for profile.uid
-            });
+            // Click: open this user's full profile
+            holder.itemView.setOnClickListener(v -> openUserProfile(profile));
         }
 
         @Override
