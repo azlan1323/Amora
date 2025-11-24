@@ -80,13 +80,27 @@
         </FrameLayout>
 
         <!-- Name -->
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Name"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:layout_marginBottom="6dp" />
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Name"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"/>
+
+            <ImageButton
+                android:id="@+id/btnEditName"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_edit"
+               />
+        </LinearLayout>
+
 
         <EditText
             android:id="@+id/etName"
@@ -101,13 +115,27 @@
             android:layout_marginBottom="16dp" />
 
         <!-- Age -->
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Age"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:layout_marginBottom="6dp" />
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Age"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"/>
+
+            <ImageButton
+                android:id="@+id/btnEditAge"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_edit"
+                 />
+        </LinearLayout>
+
 
         <EditText
             android:id="@+id/etAge"
@@ -122,13 +150,28 @@
             android:layout_marginBottom="16dp" />
 
         <!-- Address -->
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Address"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:layout_marginBottom="6dp" />
+            android:orientation="horizontal"
+            >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Address"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"/>
+
+            <ImageButton
+                android:id="@+id/btnEditAddress"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_edit"
+                />
+        </LinearLayout>
+
 
         <EditText
             android:id="@+id/etAddress"
@@ -143,13 +186,27 @@
             android:layout_marginBottom="16dp" />
 
         <!-- Bio -->
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Bio"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:layout_marginBottom="6dp" />
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bio"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"/>
+
+            <ImageButton
+                android:id="@+id/btnEditBio"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_edit"
+                />
+        </LinearLayout>
+
 
         <EditText
             android:id="@+id/etBio"
@@ -166,14 +223,27 @@
             android:layout_marginBottom="20dp" />
 
         <!-- Interests -->
-        <TextView
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="My interests"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp" />
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="My Interests"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"/>
+
+            <ImageButton
+                android:id="@+id/btnEditInterests"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:background="@android:color/transparent"
+                android:src="@drawable/ic_edit" />
+        </LinearLayout>
+
 
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/chipGroupInterests"
