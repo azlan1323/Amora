@@ -16,10 +16,6 @@
         android:theme="@style/Theme.Amora">
 
         <activity
-            android:name=".ChatActivity"
-            android:exported="false" />
-
-        <activity
             android:name=".MainActivity"
             android:exported="false" />
 

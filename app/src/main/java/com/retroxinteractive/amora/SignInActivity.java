@@ -195,8 +195,6 @@ public class SignInActivity extends AppCompatActivity {
      */
 
     private void checkUserStatus(@Nullable FirebaseUser currentUser) {
-
-        // 1. User NOT logged in → go to Onboarding
         if (currentUser == null) {
             return;
         }

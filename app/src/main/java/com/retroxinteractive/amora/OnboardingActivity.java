@@ -28,7 +28,6 @@ public class OnboardingActivity extends AppCompatActivity {
         ivGetStarted = findViewById(R.id.ivGetStarted);
         ivGetStarted.setOnClickListener(v -> {
             startActivity(new Intent(this, SignInActivity.class));
-            Toast.makeText(this, "Button Clicked", Toast.LENGTH_SHORT).show();
             finish();
         });
     }
