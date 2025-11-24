@@ -1,62 +1,46 @@
 package com.retroxinteractive.amora;
 
+import java.util.List;
+
 public class UserProfile {
 
+    // These field names should match what you store in Realtime Database
     private String uid;
     private String name;
-    private String profileUrl;
-    private String distance;
-    private long matchScore;
+    private String bio;
+    private String photoUrl;
+    private Boolean verified;
+    private Double distanceKm;       // optional; can be null
+    private Integer matchPercent;    // optional
+    private List<String> interests;  // optional
 
-    public UserProfile() { }
-
-    public UserProfile(String uid, String name, String profileUrl, String distance, long matchScore) {
-        this.uid = uid;
-        this.name = name;
-        this.profileUrl = profileUrl;
-        this.distance = distance;
-        this.matchScore = matchScore;
+    // Required empty constructor for Firebase
+    public UserProfile() {
     }
 
-    // --- GETTERS ---
-    public String getUid() {
-        return uid;
-    }
+    // --- Getters & setters ---
 
-    public String getName() {
-        return name;
-    }
+    public String getUid() { return uid; }
+    public void setUid(String uid) { this.uid = uid; }
 
-    public String getProfileUrl() {
-        return profileUrl;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public String getDistance() {
-        return distance;
-    }
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
 
-    public long getMatchScore() {
-        return matchScore;
-    }
+    public String getPhotoUrl() { return photoUrl; }
+    public void setPhotoUrl(String photoUrl) { this.photoUrl = photoUrl; }
 
-    // --- SETTERS (optional but good to have) ---
-    public void setUid(String uid) {
-        this.uid = uid;
-    }
+    public Boolean getVerified() { return verified != null && verified; }
+    public void setVerified(Boolean verified) { this.verified = verified; }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    public Double getDistanceKm() { return distanceKm; }
+    public void setDistanceKm(Double distanceKm) { this.distanceKm = distanceKm; }
 
-    public void setProfileUrl(String profileUrl) {
-        this.profileUrl = profileUrl;
-    }
+    public Integer getMatchPercent() { return matchPercent; }
+    public void setMatchPercent(Integer matchPercent) { this.matchPercent = matchPercent; }
 
-    public void setDistance(String distance) {
-        this.distance = distance;
-    }
-
-    public void setMatchScore(long matchScore) {
-        this.matchScore = matchScore;
-    }
+    public List<String> getInterests() { return interests; }
+    public void setInterests(List<String> interests) { this.interests = interests; }
 }
