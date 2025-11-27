@@ -35,7 +35,7 @@
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Complete your profile"
+            android:text="@string/complete_your_profile"
             android:textSize="28sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
@@ -46,7 +46,7 @@
             android:id="@+id/tvSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Tell others a bit about yourself"
+            android:text="@string/tell_others_a_bit_about_yourself"
             android:textSize="14sp"
             android:textColor="#A6A6A6"
             android:layout_marginBottom="24dp" />
@@ -55,21 +55,24 @@
         <FrameLayout
             android:layout_width="96dp"
             android:layout_height="96dp"
+            android:layout_gravity="center_horizontal"
             android:layout_marginBottom="24dp"
             android:background="#1A1A1A"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
             android:clickable="true"
+            android:clipToOutline="true"
+            android:contentDescription="@string/frame_layout_description"
             android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
             android:padding="4dp"
-            android:layout_gravity="center_horizontal"
-            android:clipToOutline="true">
+            tools:ignore="UnusedAttribute">
 
             <ImageView
                 android:id="@+id/imgProfile"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:scaleType="centerCrop"
                 android:src="@drawable/ic_person"
-                android:scaleType="centerCrop" />
+                tools:ignore="ContentDescription" />
 
             <View
                 android:layout_width="28dp"
@@ -88,17 +91,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Name"
+                android:text="@string/name"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"/>
-
-            <ImageButton
-                android:id="@+id/btnEditName"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_edit"
-               />
         </LinearLayout>
 
 
@@ -109,10 +104,11 @@
             android:background="@drawable/bg_field"
             android:paddingHorizontal="16dp"
             android:textColor="#FFFFFF"
-            android:textColorHint="#777777"
-            android:hint="Your name"
+            android:textColorHint="#78909C"
+            android:hint="@string/your_name"
             android:inputType="textPersonName"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="16dp"
+            tools:ignore="Autofill" />
 
         <!-- Age -->
         <LinearLayout
@@ -123,17 +119,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Age"
+                android:text="@string/age"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"/>
-
-            <ImageButton
-                android:id="@+id/btnEditAge"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_edit"
-                 />
         </LinearLayout>
 
 
@@ -141,13 +129,14 @@
             android:id="@+id/etAge"
             android:layout_width="match_parent"
             android:layout_height="48dp"
+            android:layout_marginBottom="16dp"
             android:background="@drawable/bg_field"
+            android:hint="@string/your_age"
+            android:inputType="number"
             android:paddingHorizontal="16dp"
             android:textColor="#FFFFFF"
-            android:textColorHint="#777777"
-            android:hint="Your age"
-            android:inputType="number"
-            android:layout_marginBottom="16dp" />
+            android:textColorHint="#78909C"
+            tools:ignore="Autofill" />
 
         <!-- Address -->
         <LinearLayout
@@ -159,17 +148,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Address"
+                android:text="@string/address"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"/>
-
-            <ImageButton
-                android:id="@+id/btnEditAddress"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_edit"
-                />
         </LinearLayout>
 
 
@@ -177,13 +158,14 @@
             android:id="@+id/etAddress"
             android:layout_width="match_parent"
             android:layout_height="48dp"
+            android:layout_marginBottom="16dp"
             android:background="@drawable/bg_field"
+            android:hint="@string/city_country"
+            android:inputType="textPostalAddress"
             android:paddingHorizontal="16dp"
             android:textColor="#FFFFFF"
-            android:textColorHint="#777777"
-            android:hint="City, Country"
-            android:inputType="textPostalAddress"
-            android:layout_marginBottom="16dp" />
+            android:textColorHint="#78909C"
+            tools:ignore="Autofill" />
 
         <!-- Bio -->
         <LinearLayout
@@ -194,17 +176,9 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Bio"
+                android:text="@string/bio"
                 android:textColor="#FFFFFF"
                 android:textSize="14sp"/>
-
-            <ImageButton
-                android:id="@+id/btnEditBio"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_edit"
-                />
         </LinearLayout>
 
 
@@ -212,15 +186,16 @@
             android:id="@+id/etBio"
             android:layout_width="match_parent"
             android:layout_height="120dp"
+            android:layout_marginBottom="20dp"
             android:background="@drawable/bg_field"
-            android:padding="16dp"
-            android:textColor="#FFFFFF"
-            android:textColorHint="#777777"
-            android:hint="Describe yourself in a few lines"
             android:gravity="top|start"
+            android:hint="@string/describe_yourself_in_a_few_lines"
             android:inputType="textMultiLine"
             android:maxLines="5"
-            android:layout_marginBottom="20dp" />
+            android:padding="16dp"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#78909C"
+            tools:ignore="Autofill" />
 
         <!-- Interests -->
         <LinearLayout
@@ -231,17 +206,10 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="My Interests"
+                android:text="@string/my_interests"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
                 android:textStyle="bold"/>
-
-            <ImageButton
-                android:id="@+id/btnEditInterests"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:background="@android:color/transparent"
-                android:src="@drawable/ic_edit" />
         </LinearLayout>
 
 
@@ -259,7 +227,7 @@
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Art"
+                android:text="@string/art"
                 android:checkable="true"
                 android:textColor="#FFFFFF"
                 app:chipBackgroundColor="@color/chip_bg_selector" />
@@ -268,7 +236,7 @@
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Traveling"
+                android:text="@string/traveling"
                 android:checkable="true"
                 android:textColor="#FFFFFF"
                 app:chipBackgroundColor="@color/chip_bg_selector" />
@@ -277,7 +245,7 @@
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Music"
+                android:text="@string/music"
                 android:checkable="true"
                 android:textColor="#FFFFFF"
                 app:chipBackgroundColor="@color/chip_bg_selector" />
@@ -286,7 +254,7 @@
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Gaming"
+                android:text="@string/gaming"
                 android:checkable="true"
                 android:textColor="#FFFFFF"
                 app:chipBackgroundColor="@color/chip_bg_selector" />
@@ -295,25 +263,44 @@
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Cooking"
+                android:text="@string/cooking"
                 android:checkable="true"
                 android:textColor="#FFFFFF"
                 app:chipBackgroundColor="@color/chip_bg_selector" />
 
         </com.google.android.material.chip.ChipGroup>
 
-        <!-- Save button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSaveProfile"
-            android:layout_width="match_parent"
-            android:layout_height="54dp"
-            android:text="Save and Continue"
-            android:textAllCaps="false"
-            android:textSize="16sp"
-            android:textColor="#000000"
-            android:fontFamily="sans-serif-medium"
-            app:cornerRadius="40dp"
-            app:backgroundTint="#D8FF3F" />
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_gravity="center">
+
+            <!-- Save button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSaveProfile"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/save"
+                android:textColor="#000000"
+                android:textSize="16sp"
+                app:backgroundTint="#D8FF3F"
+                app:cornerRadius="40dp"
+                tools:ignore="TouchTargetSizeCheck" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnCancel"
+                android:layout_width="match_parent"
+                android:layout_height="54dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="@string/cancel"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                app:backgroundTint="#D32F2F"
+                app:cornerRadius="40dp"
+                tools:ignore="TouchTargetSizeCheck" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>
 

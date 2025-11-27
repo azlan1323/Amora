@@ -17,7 +17,8 @@
     app:layout_constraintTop_toTopOf="parent"
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintEnd_toEndOf="parent" />
+    app:layout_constraintEnd_toEndOf="parent"
+    tools:ignore="ContentDescription" />
 
 <!-- Floating filter icon (top-right) -->
 <ImageView
@@ -29,14 +30,15 @@
     android:layout_marginTop="48dp"
     android:layout_marginEnd="24dp"
     app:layout_constraintTop_toTopOf="parent"
-    app:layout_constraintEnd_toEndOf="parent" />
+    app:layout_constraintEnd_toEndOf="parent"
+    tools:ignore="ContentDescription" />
 
 <!-- Discover TITLE (ABOVE filters!) -->
 <TextView
     android:id="@+id/discover_title"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:text="Discover"
+    android:text="@string/discover"
     android:textSize="32sp"
     android:textStyle="bold"
     android:textColor="@android:color/white"

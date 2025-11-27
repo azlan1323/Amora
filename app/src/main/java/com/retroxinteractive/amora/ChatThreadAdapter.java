@@ -63,10 +63,10 @@ public class ChatThreadAdapter extends RecyclerView.Adapter<ChatThreadAdapter.Ch
         if (thread.otherUserPhotoUrl != null && !thread.otherUserPhotoUrl.isEmpty()) {
             Glide.with(holder.itemView.getContext())
                     .load(thread.otherUserPhotoUrl)
-                    .placeholder(R.drawable.ic_nav_profile)
+                    .placeholder(R.drawable.ic_profile)
                     .into(holder.imgAvatar);
         } else {
-            holder.imgAvatar.setImageResource(R.drawable.ic_nav_profile);
+            holder.imgAvatar.setImageResource(R.drawable.ic_profile);
         }
 
         holder.itemView.setOnClickListener(v -> {

@@ -30,6 +30,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import android.view.Menu;
@@ -41,7 +42,6 @@ public class DiscoverFragment extends Fragment {
     private ImageView filterBtnTop;
     private HorizontalScrollView filterScroll;
     private LinearLayout filterContainer;
-    private RecyclerView rvProfiles;
 
     // Data
     private final List<UserProfile> allProfiles = new ArrayList<>();
@@ -74,7 +74,7 @@ public class DiscoverFragment extends Fragment {
         filterBtnTop = root.findViewById(R.id.filter_btn_top);
         filterScroll = root.findViewById(R.id.filter_scroll);
         filterContainer = root.findViewById(R.id.filter_container);
-        rvProfiles = root.findViewById(R.id.rv_discover_profiles);
+        RecyclerView rvProfiles = root.findViewById(R.id.rv_discover_profiles);
 
         // RecyclerView setup: 2-column grid
         rvProfiles.setLayoutManager(new GridLayoutManager(requireContext(), 2));
@@ -86,6 +86,13 @@ public class DiscoverFragment extends Fragment {
 
         // Filter button click → open popup menu with interests
         filterBtnTop.setOnClickListener(v -> showFilterMenu());
+
+        // Add hardcoded defaults
+        availableFilters.add("Art");
+        availableFilters.add("Music");
+        availableFilters.add("Gaming");
+        availableFilters.add("Traveling");
+        availableFilters.add("Cooking");
 
         return root;
     }
@@ -120,6 +127,34 @@ public class DiscoverFragment extends Fragment {
                 filteredProfiles.clear();
                 availableFilters.clear();
 
+                // ───── 1) Get current user's location + interests (same idea as HomepageFragment) ─────
+                double myLat = 0.0;
+                double myLng = 0.0;
+                boolean haveMyLocation = false;
+                List<String> myInterests = new ArrayList<>();
+
+                DataSnapshot meSnap = snapshot.child(currentUid);
+                if (meSnap.exists()) {
+                    // Location
+                    Double lat = meSnap.child("latitude").getValue(Double.class);
+                    Double lng = meSnap.child("longitude").getValue(Double.class);
+                    if (lat != null && lng != null) {
+                        myLat = lat;
+                        myLng = lng;
+                        haveMyLocation = true;
+                    }
+
+                    // My interests
+                    DataSnapshot myInterestsSnap = meSnap.child("interests");
+                    for (DataSnapshot iSnap : myInterestsSnap.getChildren()) {
+                        String interest = iSnap.getValue(String.class);
+                        if (interest != null && !interest.trim().isEmpty()) {
+                            myInterests.add(interest.trim());
+                        }
+                    }
+                }
+
+                // ───── 2) Build profiles for everyone else ─────
                 for (DataSnapshot child : snapshot.getChildren()) {
                     String uid = child.getKey();
                     if (uid == null || uid.equals(currentUid)) continue;
@@ -131,6 +166,11 @@ public class DiscoverFragment extends Fragment {
                     String name = child.child("name").getValue(String.class);
                     String bio = child.child("bio").getValue(String.class);
                     String imageUrl = child.child("profileImageUrl").getValue(String.class);
+                    Boolean verified = child.child("verified").getValue(Boolean.class);
+
+                    // Optional age field (if present in DB)
+                    long ageLong = Long.parseLong(Objects.requireNonNull(child.child("age").getValue(String.class)));
+                    int age = (int) ageLong;
 
                     // Interests list
                     List<String> interests = new ArrayList<>();
@@ -138,16 +178,34 @@ public class DiscoverFragment extends Fragment {
                     for (DataSnapshot iSnap : interestsSnap.getChildren()) {
                         String interest = iSnap.getValue(String.class);
                         if (interest != null && !interest.trim().isEmpty()) {
-                            interests.add(interest);
-                            availableFilters.add(interest);
+                            interests.add(interest.trim());
+                            availableFilters.add(interest.trim());
                         }
                     }
 
+                    // Distance
+                    double distanceKm = -1;
+                    if (haveMyLocation) {
+                        Double lat = child.child("latitude").getValue(Double.class);
+                        Double lng = child.child("longitude").getValue(Double.class);
+                        if (lat != null && lng != null) {
+                            distanceKm = calculateDistanceKm(myLat, myLng, lat, lng);
+                        }
+                    }
+
+                    // Match %
+                    int matchPercent = calculateMatchPercent(myInterests, interests);
+
+                    // Build profile
                     UserProfile profile = new UserProfile();
                     profile.uid = uid;
                     profile.name = name;
+                    profile.age = age;
                     profile.bio = bio;
                     profile.profileImageUrl = imageUrl;
+                    profile.verified = (verified != null && verified);
+                    profile.distanceKm = distanceKm;      // -1 means unknown
+                    profile.matchPercent = matchPercent;  // 0–100
                     profile.interests = interests;
 
                     allProfiles.add(profile);
@@ -169,6 +227,65 @@ public class DiscoverFragment extends Fragment {
         };
 
         usersRef.addValueEventListener(usersListener);
+    }
+
+    /**
+     * Haversine distance in km between 2 lat/lng pairs.
+     */
+    private double calculateDistanceKm(double lat1, double lon1,
+                                       double lat2, double lon2) {
+        double R = 6371.0; // Earth radius in km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1))
+                * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    /**
+     * Returns how many of myInterests are shared with otherInterests, as a %.
+     * Example: my = ["Art","Music","Travel"], other = ["Music","Cooking"]
+     * common = 1 → 1/3 ≈ 33%.
+     */
+    private int calculateMatchPercent(List<String> myInterests, List<String> otherInterests) {
+        if (myInterests == null || myInterests.isEmpty()
+                || otherInterests == null || otherInterests.isEmpty()) {
+            return 0;
+        }
+
+        // count only non-empty items in myInterests
+        int baseCount = 0;
+        for (String s : myInterests) {
+            if (s != null && !s.trim().isEmpty()) {
+                baseCount++;
+            }
+        }
+        if (baseCount == 0) return 0;
+
+        int common = getCommon(myInterests, otherInterests);
+
+        return (int) Math.round(common * 100.0 / baseCount);
+    }
+
+    private int getCommon(List<String> myInterests, List<String> otherInterests) {
+        int common = 0;
+        for (String mine : myInterests) {
+            if (mine == null || mine.trim().isEmpty()) continue;
+            String mineNorm = mine.trim().toLowerCase();
+
+            // see if other user has this interest (case-insensitive)
+            for (String other : otherInterests) {
+                if (other == null || other.trim().isEmpty()) continue;
+                if (mineNorm.equals(other.trim().toLowerCase())) {
+                    common++;
+                    break; // avoid double-counting
+                }
+            }
+        }
+        return common;
     }
 
     // ─────────────────────────────────────────────
@@ -198,7 +315,7 @@ public class DiscoverFragment extends Fragment {
         }
 
         menu.setOnMenuItemClickListener(item -> {
-            String chosen = item.getTitle().toString();
+            String chosen = Objects.requireNonNull(item.getTitle()).toString();
             if (!TextUtils.isEmpty(chosen) && !selectedFilters.contains(chosen)) {
                 selectedFilters.add(chosen);
                 refreshFilterChips();

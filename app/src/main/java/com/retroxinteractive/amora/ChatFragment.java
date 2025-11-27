@@ -50,14 +50,19 @@ public class ChatFragment extends Fragment {
     private List<Message> messageList = new ArrayList<>();
 
     private FirebaseUser currentUser;
-    private DatabaseReference chatRef;
+
+    private DatabaseReference chatsRoot;
     private DatabaseReference userChatsRoot;
+    private DatabaseReference usersRoot;
     private DatabaseReference likesRoot;
 
     private String receiverId;
     private String receiverName;
     private String receiverPhotoUrl;
+
     private String roomId;
+    private ChildEventListener messagesListener;
+
     private TextView tvMatched;
 
     public ChatFragment() {
@@ -88,7 +93,13 @@ public class ChatFragment extends Fragment {
         }
 
         userChatsRoot = FirebaseDatabase.getInstance().getReference("userChats");
+        chatsRoot = FirebaseDatabase.getInstance().getReference("chats");
+        usersRoot = FirebaseDatabase.getInstance().getReference("users");
         likesRoot = FirebaseDatabase.getInstance().getReference("likes");
+
+        if (currentUser != null && receiverId != null) {
+            roomId = buildRoomId(currentUser.getUid(), receiverId);
+        }
     }
 
     @Nullable
@@ -97,41 +108,14 @@ public class ChatFragment extends Fragment {
                              @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_chat, container, false);
-
-        if (currentUser == null) {
-            Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show();
-            return root;
-        }
-
         initViews(root);
-        setupToolbar();
         setupRecycler();
-        checkMatchStatus();
-
-        if (!TextUtils.isEmpty(receiverId)) {
-            String myId = currentUser.getUid();
-            if (myId.compareTo(receiverId) < 0) {
-                roomId = myId + "_" + receiverId;
-            } else {
-                roomId = receiverId + "_" + myId;
-            }
-
-            chatRef = FirebaseDatabase.getInstance()
-                    .getReference("chats")
-                    .child(roomId);
-
-            listenForMessages();
-            markThreadAsRead();   // clear unread count when opening
-
-            btnSend.setOnClickListener(v -> sendMessage());
-        } else {
-            btnSend.setOnClickListener(v ->
-                    Toast.makeText(requireContext(),
-                            "No chat selected", Toast.LENGTH_SHORT).show());
-        }
-
-        btnBack.setOnClickListener(v -> requireActivity().onBackPressed());
-
+        setupToolbar();
+        setupBackButton();
+        setupSendButton();
+        observeMessages();
+        markThreadAsRead();
+        observeMatchedStatus();
         return root;
     }
 
@@ -144,34 +128,30 @@ public class ChatFragment extends Fragment {
         edtMessage = root.findViewById(R.id.edtMessage);
         recyclerView = root.findViewById(R.id.recyclerMessages);
         tvMatched = root.findViewById(R.id.tvMatched);
-
-        messageList = new ArrayList<>();
     }
 
-    private void checkMatchStatus() {
-        if (currentUser == null || TextUtils.isEmpty(receiverId)) return;
-        if (tvMatched == null) return;
+    private void observeMatchedStatus() {
+        if (currentUser == null || receiverId == null || tvMatched == null) {
+            return;
+        }
 
-        final String myId = currentUser.getUid();
+        String myId = currentUser.getUid();
 
-        // Only show MATCHED if *I* liked them AND *they* liked me
         likesRoot.child(myId).child(receiverId)
                 .addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot myLikeSnap) {
                         if (!myLikeSnap.exists()) {
-                            // I haven't liked them yet -> no match
                             return;
                         }
 
-                        // Check reverse like
                         likesRoot.child(receiverId).child(myId)
                                 .addListenerForSingleValueEvent(new ValueEventListener() {
                                     @Override
                                     public void onDataChange(@NonNull DataSnapshot otherLikeSnap) {
                                         if (otherLikeSnap.exists()) {
-                                            // Mutual like – show MATCHED
-                                            tvMatched.setText("MATCHED");
+                                            String str = "MATCHED";
+                                            tvMatched.setText(str);
                                         }
                                     }
 
@@ -189,7 +169,6 @@ public class ChatFragment extends Fragment {
                 });
     }
 
-
     private void setupToolbar() {
         if (txtName == null || txtStatus == null) return;
 
@@ -197,14 +176,54 @@ public class ChatFragment extends Fragment {
         txtName.setText(title);
         txtStatus.setText(""); // placeholder for status
 
+        // Make header clickable to open the other user's profile
+        View.OnClickListener openProfileClick = v -> openUserProfile();
+
+        txtName.setOnClickListener(openProfileClick);
+        if (imgProfile != null) {
+            imgProfile.setOnClickListener(openProfileClick);
+        }
+
         if (!TextUtils.isEmpty(receiverPhotoUrl)) {
             Glide.with(requireContext())
                     .load(receiverPhotoUrl)
-                    .placeholder(R.drawable.ic_nav_profile)
+                    .placeholder(R.drawable.ic_profile)
                     .into(imgProfile);
         } else {
-            imgProfile.setImageResource(R.drawable.ic_nav_profile);
+            imgProfile.setImageResource(R.drawable.ic_profile);
         }
+    }
+
+    /**
+     * Open the receiver's profile, similar to DiscoverFragment.openUserProfile().
+     * This works even if ChatFragment is hosted by different activities/fragments.
+     */
+    private void openUserProfile() {
+        if (TextUtils.isEmpty(receiverId)) {
+            Toast.makeText(requireContext(), "User id missing", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Create ProfileFragment for this user
+        ProfileFragment fragment = ProfileFragment.newInstance(receiverId, null);
+
+        // If we're inside MainActivity, also hide its bottom nav
+        if (getActivity() instanceof MainActivity) {
+            ((MainActivity) getActivity()).setBottomNavVisible(false);
+        }
+
+        // Use the container that currently hosts this ChatFragment
+        int containerId = getId();
+        if (containerId == View.NO_ID) {
+            // Fallback to main container (used in MainActivity)
+            containerId = R.id.main_fragment_container;
+        }
+
+        getParentFragmentManager()
+                .beginTransaction()
+                .replace(containerId, fragment)
+                .addToBackStack("chat_to_profile")
+                .commit();
     }
 
     private void setupRecycler() {
@@ -215,12 +234,65 @@ public class ChatFragment extends Fragment {
         recyclerView.setAdapter(adapter);
     }
 
-    private void sendMessage() {
-        if (chatRef == null) return;
+    private void setupBackButton() {
+        btnBack.setOnClickListener(v -> {
+            requireActivity().onBackPressed();
+        });
+    }
 
-        String text = edtMessage.getText().toString().trim();
-        if (TextUtils.isEmpty(text)) return;
+    private void setupSendButton() {
+        btnSend.setOnClickListener(v -> {
+            String text = edtMessage.getText().toString().trim();
+            if (TextUtils.isEmpty(text)) {
+                return;
+            }
+            sendMessage(text);
+        });
+    }
 
+    private void observeMessages() {
+        if (roomId == null) return;
+
+        messageList.clear();
+        if (adapter != null) {
+            adapter.notifyDataSetChanged();
+        }
+
+        DatabaseReference chatRef = chatsRoot.child(roomId);
+        messagesListener = chatRef.orderByChild("timestamp")
+                .addChildEventListener(new ChildEventListener() {
+                    @Override
+                    public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                        Message m = snapshot.getValue(Message.class);
+                        if (m != null) {
+                            messageList.add(m);
+                            adapter.notifyItemInserted(messageList.size() - 1);
+                            scrollToBottom();
+                        }
+                    }
+
+                    @Override
+                    public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                    }
+
+                    @Override
+                    public void onChildRemoved(@NonNull DataSnapshot snapshot) {
+                    }
+
+                    @Override
+                    public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                    }
+                });
+    }
+
+    private void sendMessage(String text) {
+        if (currentUser == null || roomId == null) return;
+
+        DatabaseReference chatRef = chatsRoot.child(roomId);
         String id = chatRef.push().getKey();
         if (id == null) return;
 
@@ -241,70 +313,64 @@ public class ChatFragment extends Fragment {
                     updateThreadsOnSend(text, timestamp);
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(requireContext(),
-                                "Failed to send", Toast.LENGTH_SHORT).show());
+                        Toast.makeText(requireContext(), "Failed to send", Toast.LENGTH_SHORT).show());
     }
 
     private void updateThreadsOnSend(String lastMessage, long timestamp) {
+        if (currentUser == null || receiverId == null || roomId == null) return;
 
-        // Load sender app-profile from Firebase
-        FirebaseDatabase.getInstance().getReference("users")
-                .child(currentUser.getUid())
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+        String myId = currentUser.getUid();
 
-                        String myName = snapshot.child("name").getValue(String.class);
-                        String myPhoto = snapshot.child("profileImageUrl").getValue(String.class);
+        usersRoot.child(myId).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                UserProfile me = snapshot.getValue(UserProfile.class);
+                if (me == null) return;
 
-                        if (myName == null) myName = "User";
-                        if (myPhoto == null) myPhoto = "";
+                String myName = snapshot.child("name").getValue(String.class);
+                String myPhoto = snapshot.child("profileImageUrl").getValue(String.class);
 
-                        // ─────────────────────────────────────────────
-                        // 1. UPDATE SENDER SIDE THREAD (unreadCount = 0)
-                        // ─────────────────────────────────────────────
+                if (myName == null) myName = "User";
+                if (myPhoto == null) myPhoto = "";
 
-                        ChatThread senderThread = new ChatThread(
-                                roomId,
-                                receiverId,
-                                receiverName,        // correct name from arguments
-                                receiverPhotoUrl,    // correct photo from arguments
-                                lastMessage,
-                                timestamp,
-                                0
-                        );
+                // 1) Sender side thread (me)
+                ChatThread senderThread = new ChatThread(
+                        roomId,
+                        receiverId,
+                        receiverName,
+                        receiverPhotoUrl,
+                        lastMessage,
+                        timestamp,
+                        0
+                );
 
-                        userChatsRoot.child(currentUser.getUid())
-                                .child(roomId)
-                                .setValue(senderThread);
+                userChatsRoot.child(myId)
+                        .child(roomId)
+                        .setValue(senderThread);
 
+                // 2) Receiver side thread (other user)
+                Map<String, Object> update = new HashMap<>();
+                update.put("roomId", roomId);
+                update.put("otherUserId", myId);
+                update.put("otherUserName", myName);
+                update.put("otherUserPhotoUrl", myPhoto);
+                update.put("lastMessage", lastMessage);
+                update.put("lastTimestamp", timestamp);
+                update.put("unreadCount", ServerValue.increment(1));
 
-                        // ─────────────────────────────────────────────
-                        // 2. UPDATE RECEIVER SIDE THREAD
-                        // Use sender's REAL name + REAL photo from DB
-                        // ─────────────────────────────────────────────
+                userChatsRoot.child(receiverId)
+                        .child(roomId)
+                        .updateChildren(update);
+            }
 
-                        Map<String, Object> update = new HashMap<>();
-                        update.put("roomId", roomId);
-                        update.put("otherUserId", currentUser.getUid());
-                        update.put("otherUserName", myName);
-                        update.put("otherUserPhotoUrl", myPhoto);
-                        update.put("lastMessage", lastMessage);
-                        update.put("lastTimestamp", timestamp);
-                        update.put("unreadCount", ServerValue.increment(1));
-
-                        userChatsRoot.child(receiverId)
-                                .child(roomId)
-                                .updateChildren(update);
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) { }
-                });
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
     }
 
     private void markThreadAsRead() {
-        if (TextUtils.isEmpty(roomId)) return;
+        if (currentUser == null || receiverId == null || roomId == null) return;
 
         userChatsRoot.child(currentUser.getUid())
                 .child(roomId)
@@ -312,23 +378,21 @@ public class ChatFragment extends Fragment {
                 .setValue(0);
     }
 
-    private void listenForMessages() {
-        chatRef.addChildEventListener(new ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot snapshot, String previousChildName) {
-                Message msg = snapshot.getValue(Message.class);
-                if (msg != null) {
-                    messageList.add(msg);
-                    adapter.notifyItemInserted(messageList.size() - 1);
-                    scrollToBottom();
-                }
-            }
+    private String buildRoomId(String uid1, String uid2) {
+        if (uid1.compareTo(uid2) < 0) {
+            return uid1 + "_" + uid2;
+        } else {
+            return uid2 + "_" + uid1;
+        }
+    }
 
-            @Override public void onChildChanged(@NonNull DataSnapshot snapshot, String prev) {}
-            @Override public void onChildRemoved(@NonNull DataSnapshot snapshot) {}
-            @Override public void onChildMoved(@NonNull DataSnapshot snapshot, String prev) {}
-            @Override public void onCancelled(@NonNull DatabaseError error) {}
-        });
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (messagesListener != null && roomId != null) {
+            chatsRoot.child(roomId).removeEventListener(messagesListener);
+            messagesListener = null;
+        }
     }
 
     private void scrollToBottom() {
@@ -339,7 +403,6 @@ public class ChatFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        // whenever we come back to this screen, clear unread count
         markThreadAsRead();
     }
 }

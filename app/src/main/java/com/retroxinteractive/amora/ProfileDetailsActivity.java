@@ -6,7 +6,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -36,7 +35,6 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,10 +44,6 @@ import java.util.Map;
 public class ProfileDetailsActivity extends AppCompatActivity {
 
     private static final int LOCATION_PERMISSION_REQUEST = 1001;
-
-    // NEW – edit buttons
-    ImageButton btnEditName, btnEditAge, btnEditAddress, btnEditBio, btnEditInterests;
-
     private EditText etName, etAge, etBio, etAddress;
     private ChipGroup chipGroupInterests;
     private ImageView imgProfile;
@@ -66,7 +60,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
     private double currentLatitude = 0.0;
     private double currentLongitude = 0.0;
     private boolean hasLocation = false;
-    String coordsText;
+    String cordsText;
 
     private ActivityResultLauncher<String> imagePickerLauncher;
 
@@ -99,47 +93,11 @@ public class ProfileDetailsActivity extends AppCompatActivity {
         );
 
         initViews();
-        disableAllInputs();  // disable fields on start
-        setEditButtonListeners(); // allow editing single sections
         loadExistingProfile();
     }
 
 
-    // --------- NEW FUNCTION ----------
-    private void disableAllInputs() {
-        etName.setEnabled(false);
-        etAge.setEnabled(false);
-        etAddress.setEnabled(false);
-        etBio.setEnabled(false);
-
-        for (int i = 0; i < chipGroupInterests.getChildCount(); i++) {
-            chipGroupInterests.getChildAt(i).setEnabled(false);
-        }
-    }
-
-    // --------- NEW FUNCTION ----------
-    private void setEditButtonListeners() {
-        btnEditName.setOnClickListener(v -> etName.setEnabled(true));
-        btnEditAge.setOnClickListener(v -> etAge.setEnabled(true));
-        btnEditAddress.setOnClickListener(v -> etAddress.setEnabled(true));
-        btnEditBio.setOnClickListener(v -> etBio.setEnabled(true));
-
-        btnEditInterests.setOnClickListener(v -> {
-            for (int i = 0; i < chipGroupInterests.getChildCount(); i++) {
-                chipGroupInterests.getChildAt(i).setEnabled(true);
-            }
-        });
-    }
-
-
     private void initViews() {
-
-        btnEditName = findViewById(R.id.btnEditName);
-        btnEditAge = findViewById(R.id.btnEditAge);
-        btnEditAddress = findViewById(R.id.btnEditAddress);
-        btnEditBio = findViewById(R.id.btnEditBio);
-        btnEditInterests = findViewById(R.id.btnEditInterests);
-
         etName = findViewById(R.id.etName);
         etAge = findViewById(R.id.etAge);
         etAddress = findViewById(R.id.etAddress);
@@ -147,12 +105,14 @@ public class ProfileDetailsActivity extends AppCompatActivity {
         chipGroupInterests = findViewById(R.id.chipGroupInterests);
         imgProfile = findViewById(R.id.imgProfile);
         btnSave = findViewById(R.id.btnSaveProfile);
+        MaterialButton btnCancel = findViewById(R.id.btnCancel);
 
         imgProfile.setOnClickListener(v -> imagePickerLauncher.launch("image/*"));
 
         etAddress.setOnClickListener(v -> fetchLocationForAddressField());
 
         btnSave.setOnClickListener(v -> saveProfile());
+        btnCancel.setOnClickListener((v)-> finish());
     }
 
 
@@ -266,7 +226,7 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                         currentLatitude = location.getLatitude();
                         currentLongitude = location.getLongitude();
                         hasLocation = true;
-                        coordsText = currentLatitude + ", " + currentLongitude;
+                        cordsText = currentLatitude + ", " + currentLongitude;
                     } else {
                         Toast.makeText(this,
                                 "Could not get location. Turn on GPS.",
@@ -374,7 +334,6 @@ public class ProfileDetailsActivity extends AppCompatActivity {
                     Toast.makeText(this,
                             "Profile saved!", Toast.LENGTH_SHORT).show();
 
-                    disableAllInputs(); // lock all fields again
                     goToMainActivity();
                 })
                 .addOnFailureListener(e -> {

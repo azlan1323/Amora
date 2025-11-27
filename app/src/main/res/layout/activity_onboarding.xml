@@ -39,7 +39,7 @@
     android:id="@+id/logo"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:src="@drawable/logocontainer"
+    android:src="@drawable/logo_container"
     android:layout_marginTop="40dp"
     app:layout_constraintTop_toTopOf="parent"
     app:layout_constraintStart_toStartOf="parent"
@@ -125,7 +125,7 @@
         android:id="@+id/ivGetStarted"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/buttoncontainer"
+        android:src="@drawable/button_container"
         android:scaleType="fitXY"
         tools:ignore="ContentDescription" />
 

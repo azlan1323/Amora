@@ -29,13 +29,12 @@
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="24dp"
         android:gravity="center"
-        android:paddingStart="45dp"
-        android:paddingEnd="12dp"
         android:background="@drawable/nav_bar_bg"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="DisableBaselineAlignment">
 
         <!-- Home -->
         <FrameLayout
@@ -49,16 +48,17 @@
             <!-- yellow background version -->
             <ImageView
                 android:id="@+id/icon_home"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:src="@drawable/ic_highlight_homepage" />
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_highlight_home"
+                tools:ignore="ContentDescription" />
         </FrameLayout>
 
         <!-- Discover -->
         <FrameLayout
             android:id="@+id/nav_discover"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:gravity="center">
 
@@ -66,9 +66,11 @@
             <!-- NO yellow bg -->
             <ImageView
                 android:id="@+id/icon_discover"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_nav_block"/>
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_discover"
+                android:scaleType="fitCenter"
+                tools:ignore="ContentDescription" />
         </FrameLayout>
 
         <!-- Chat -->
@@ -81,9 +83,10 @@
 
             <ImageView
                 android:id="@+id/icon_chat"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_nav_chat" />
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_chat"
+                tools:ignore="ContentDescription" />
         </FrameLayout>
 
         <!-- Profile -->
@@ -96,9 +99,10 @@
 
             <ImageView
                 android:id="@+id/icon_profile"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_nav_profile"/>
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/ic_profile"
+                tools:ignore="ContentDescription" />
         </FrameLayout>
 
     </LinearLayout>

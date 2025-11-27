@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root_profile_card"
     android:layout_width="match_parent"
     android:layout_height="500dp"
@@ -16,7 +17,8 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:ignore="ContentDescription" />
 
     <!-- ========= INNER BOX (white card) ========= -->
     <LinearLayout
@@ -47,7 +49,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
-                android:adjustViewBounds="true" />
+                android:adjustViewBounds="true"
+                tools:ignore="ContentDescription" />
 
             <!-- Distance pill -->
             <LinearLayout
@@ -68,14 +71,15 @@
                     android:id="@+id/img_distance_icon"
                     android:layout_width="16dp"
                     android:layout_height="16dp"
-                    android:src="@drawable/ic_distance" />
+                    android:src="@drawable/ic_distance"
+                    tools:ignore="ContentDescription" />
 
                 <TextView
                     android:id="@+id/tv_distance"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="6dp"
-                    android:text="3.2 km"
+                    android:text="@string/_3_2_km"
                     android:textSize="12sp"
                     android:textColor="@android:color/white" />
             </LinearLayout>
@@ -99,14 +103,15 @@
                     android:id="@+id/img_match_icon"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:src="@drawable/ic_heart" />
+                    android:src="@drawable/ic_heart"
+                    tools:ignore="ContentDescription" />
 
                 <TextView
                     android:id="@+id/tv_match_percent"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
-                    android:text="98%"
+                    android:text="@string/_98"
                     android:textSize="12sp"
                     android:textColor="@android:color/black" />
             </LinearLayout>
@@ -123,7 +128,7 @@
             android:id="@+id/tv_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Jennifer Coppen"
+            android:text="@string/jennifer"
             android:textSize="18sp"
             android:textStyle="bold"
             android:textColor="@android:color/white" />
@@ -134,7 +139,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="I’m a passionate individual with a love for exploring new cultures and cuisines."
+            android:text="@string/i_m_a_passionate_individual_with_a_love_for_exploring_new_cultures_and_cuisines"
             android:textSize="13sp"
             android:textColor="@android:color/white"
             android:maxLines="3"
@@ -162,7 +167,7 @@
                 android:paddingRight="10dp"
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp"
-                android:text="Modeling"
+                android:text="@string/modeling"
                 android:textSize="11sp"
                 android:textColor="@android:color/white" />
 
@@ -176,7 +181,7 @@
                 android:paddingRight="10dp"
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp"
-                android:text="Hiking"
+                android:text="@string/hiking"
                 android:textSize="11sp"
                 android:textColor="@android:color/white" />
 
@@ -189,7 +194,7 @@
                 android:paddingRight="10dp"
                 android:paddingTop="4dp"
                 android:paddingBottom="4dp"
-                android:text="Photography"
+                android:text="@string/photography"
                 android:textSize="11sp"
                 android:textColor="@android:color/white" />
         </LinearLayout>
@@ -214,19 +219,23 @@
             android:layout_width="100dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="24dp"
-            android:src="@drawable/btn_heart"
             android:adjustViewBounds="true"
             android:clickable="true"
-            android:focusable="true" />
+            android:contentDescription="@string/btn_like_description"
+            android:focusable="true"
+            android:src="@drawable/btn_heart"
+            tools:ignore="TouchTargetSizeCheck,RedundantDescriptionCheck" />
 
         <ImageView
             android:id="@+id/btn_chat"
             android:layout_width="100dp"
             android:layout_height="wrap_content"
-            android:src="@drawable/btn_chat"
             android:adjustViewBounds="true"
             android:clickable="true"
-            android:focusable="true" />
+            android:contentDescription="@string/btn_chat_description"
+            android:focusable="true"
+            android:src="@drawable/btn_chat"
+            tools:ignore="ContentDescription,TouchTargetSizeCheck,RedundantDescriptionCheck" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

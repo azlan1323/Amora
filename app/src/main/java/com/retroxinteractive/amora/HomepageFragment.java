@@ -1,6 +1,5 @@
 package com.retroxinteractive.amora;
 
-import android.graphics.Picture;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -31,10 +30,8 @@ import java.util.Objects;
 
 public class HomepageFragment extends Fragment {
 
-    private RecyclerView rvProfiles;
     private HomeProfileAdapter adapter;
 
-    private FirebaseAuth mAuth;
     private DatabaseReference usersRef;
     private ValueEventListener usersListener;
     private TextView tvLocation;
@@ -62,7 +59,7 @@ public class HomepageFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        rvProfiles = view.findViewById(R.id.rv_profiles);
+        RecyclerView rvProfiles = view.findViewById(R.id.rv_profiles);
 
         // Horizontal carousel
         LinearLayoutManager layoutManager =
@@ -75,7 +72,7 @@ public class HomepageFragment extends Fragment {
         adapter = new HomeProfileAdapter(requireContext());
         rvProfiles.setAdapter(adapter);
 
-        mAuth = FirebaseAuth.getInstance();
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
         usersRef = FirebaseDatabase.getInstance().getReference("users");
 
         tvLocation = view.findViewById(R.id.tv_location);
@@ -146,9 +143,9 @@ public class HomepageFragment extends Fragment {
                 if (picture != null) {
                     // use address
                     Log.d("Profile Picture URL: ", "Picture" + picture);
-                    Glide.with(Objects.requireNonNull(getContext()))
+                    Glide.with(requireContext())
                             .load(picture)
-                            .placeholder(R.drawable.ic_nav_profile)
+                            .placeholder(R.drawable.ic_profile)
                             .centerCrop()
                             .into(img_avatar);
                 }
@@ -215,7 +212,7 @@ public class HomepageFragment extends Fragment {
                     String name = child.child("name").getValue(String.class);
                     String bio = child.child("bio").getValue(String.class);
                     String address = child.child("address").getValue(String.class);
-
+                    String age = child.child("age").getValue(String.class);
 
                     // This is how it is saved in your DB
                     String imageUrl = child.child("profileImageUrl").getValue(String.class);
@@ -231,7 +228,6 @@ public class HomepageFragment extends Fragment {
                         }
                     }
 
-// Distance
                     // Distance
                     Double distance = null;
                     if (haveMyLocation) {
@@ -246,13 +242,14 @@ public class HomepageFragment extends Fragment {
                     profile.setUid(uid);
                     profile.setName(name);
                     profile.setBio(bio);
+                    profile.setAge(age);
                     profile.setAddress(address);
                     profile.setPhotoUrl(imageUrl);
                     profile.setVerified(verified != null && verified);
                     profile.setDistanceKm(distance);
                     profile.setInterests(interests);
 
-// Match percent
+                    // Match percent
                     int matchPercent = calculateMatchPercent(myInterests, interests);
                     profile.setMatchPercent(matchPercent);
 
@@ -260,7 +257,7 @@ public class HomepageFragment extends Fragment {
 
                     allProfiles.add(profile);
 
-// Nearby: distance < 5km
+                    // Nearby: distance < 5km
                     if (distance != null && distance < 5.0) {
                         nearbyProfiles.add(profile);
                     }
@@ -286,8 +283,10 @@ public class HomepageFragment extends Fragment {
 
     private void updateCountsAndApplyCurrentFilter() {
         // Update the labels like "For You (10)" and "Nearby (3)"
-        tabForYou.setText("For You (" + allProfiles.size() + ")");
-        tabNearby.setText("Nearby (" + nearbyProfiles.size() + ")");
+        String str = "For You (" + allProfiles.size() + ")";
+        tabForYou.setText(str);
+        str = "Nearby (" + nearbyProfiles.size() + ")";
+        tabNearby.setText(str);
 
         applyCurrentFilter();
     }
@@ -358,6 +357,12 @@ public class HomepageFragment extends Fragment {
         }
         if (baseCount == 0) return 0;
 
+        int common = getCommon(myInterests, otherInterests);
+
+        return (int) Math.round(common * 100.0 / baseCount);
+    }
+
+    private int getCommon(List<String> myInterests, List<String> otherInterests) {
         int common = 0;
         for (String mine : myInterests) {
             if (mine == null || mine.trim().isEmpty()) continue;
@@ -372,7 +377,6 @@ public class HomepageFragment extends Fragment {
                 }
             }
         }
-
-        return (int) Math.round(common * 100.0 / baseCount);
+        return common;
     }
 }

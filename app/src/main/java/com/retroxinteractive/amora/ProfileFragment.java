@@ -1,5 +1,7 @@
 package com.retroxinteractive.amora;
 
+import static android.view.View.GONE;
+
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -19,6 +21,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.Fragment;
 
 import com.bumptech.glide.Glide;
@@ -35,31 +38,28 @@ import com.google.firebase.storage.StorageReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 
 public class ProfileFragment extends Fragment {
 
     private static final String ARG_FROM_MAIN_PROFILE = "from_main_profile";
     private static final String ARG_USER_ID = "user_id";
-    private ImageView btnEditBio;
-    private String currentUserId;
-
 
     // true = opened from MainActivity (own profile)
     private boolean openedFromMainProfile = false;
     // uid of user whose profile we are viewing (null = current user)
     private String viewedUserId;
 
-    private TextView tvNameAge, tvBio, tvDistance;
+    private TextView tvNameAge;
+    private TextView tvBio;
+    private TextView tvDistance;
     private ImageView imgProfilePhoto;
-    private View containerDistance, bottomActionBar;
-    private ImageButton btnAddPhoto;
     private LinearLayout photosContainer;
 
     // interest pills
-    private TextView tvInterest1, tvInterest2, tvInterest3,
-            tvInterest4, tvInterest5, tvInterest6;
+    private TextView tvInterest1, tvInterest2, tvInterest3, tvInterest4, tvInterest5;
 
-    private DatabaseReference userRef;
     private String currentUid;
 
     // For opening chat from this screen
@@ -135,9 +135,9 @@ public class ProfileFragment extends Fragment {
         tvDistance = view.findViewById(R.id.tv_distance);
 
         imgProfilePhoto = view.findViewById(R.id.img_profile_photo);
-        containerDistance = view.findViewById(R.id.container_distance);
-        bottomActionBar = view.findViewById(R.id.bottom_bar);
-        btnAddPhoto = view.findViewById(R.id.btn_add_photo);
+        View containerDistance = view.findViewById(R.id.container_distance);
+        View bottomActionBar = view.findViewById(R.id.bottom_bar);
+        ImageView btnAddPhoto = view.findViewById(R.id.btn_add_photo);
 
         photosContainer = view.findViewById(R.id.photos_container);
 
@@ -146,24 +146,20 @@ public class ProfileFragment extends Fragment {
         tvInterest3 = view.findViewById(R.id.tv_interest_art);
         tvInterest4 = view.findViewById(R.id.tv_interest_travel);
         tvInterest5 = view.findViewById(R.id.tv_interest_music);
-        tvInterest6 = view.findViewById(R.id.tv_interest_painting);
 
-        btnEditBio = view.findViewById(R.id.btn_more);
-
+        ImageView btnMore = view.findViewById(R.id.btn_more);
 
         // Back button in top bar
         ImageButton btnBack = view.findViewById(R.id.btn_back);
-        if (btnBack != null) {
-            btnBack.setOnClickListener(v ->
-                    requireActivity().getOnBackPressedDispatcher().onBackPressed()
-            );
-        }
+        btnBack.setOnClickListener(v ->
+                requireActivity().getOnBackPressedDispatcher().onBackPressed()
+        );
 
         // UI behaviour based on whether this is my profile or someone else's
         if (openedFromMainProfile) {
             // Own profile
             if (containerDistance != null) {
-                containerDistance.setVisibility(View.GONE);
+                containerDistance.setVisibility(GONE);
             }
             if (btnAddPhoto != null) {
                 btnAddPhoto.setVisibility(View.VISIBLE);
@@ -174,7 +170,7 @@ public class ProfileFragment extends Fragment {
                 });
             }
             if (bottomActionBar != null) {
-                bottomActionBar.setVisibility(View.GONE);
+                bottomActionBar.setVisibility(GONE);
             }
         } else {
             // Viewing someone else
@@ -182,7 +178,7 @@ public class ProfileFragment extends Fragment {
                 containerDistance.setVisibility(View.VISIBLE);
             }
             if (btnAddPhoto != null) {
-                btnAddPhoto.setVisibility(View.GONE);
+                btnAddPhoto.setVisibility(GONE);
             }
             if (bottomActionBar != null) {
                 bottomActionBar.setVisibility(View.VISIBLE);
@@ -197,23 +193,12 @@ public class ProfileFragment extends Fragment {
             if (btnLike != null) {
                 btnLike.setOnClickListener(v -> handleLikeClick());
             }
+
+            btnMore.setVisibility(GONE);
         }
 
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        String currentUserId = user != null ? user.getUid() : null;
-
-        /*// Show edit button only if this is owner's profile
-        if (viewedUserId != null && viewedUserId.equals(currentUserId)) {
-            btnEditBio.setVisibility(View.VISIBLE);
-        } else {
-            btnEditBio.setVisibility(View.GONE);
-        }
-*/
-        btnEditBio.setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), ProfileDetailsActivity.class);
-            startActivity(intent);
-        });
-
+        // More button -> dropdown menu (Edit Profile + Logout)
+        btnMore.setOnClickListener(this::showMoreMenu);
 
         loadUserProfile();
         return view;
@@ -291,12 +276,41 @@ public class ProfileFragment extends Fragment {
                 });
     }
 
+    // --- "More" menu: Edit Profile & Logout ---
+    private void showMoreMenu(View anchor) {
+        PopupMenu popupMenu = new PopupMenu(anchor.getContext(), anchor);
+        popupMenu.getMenu().add("Edit Profile");
+        popupMenu.getMenu().add("Logout");
+
+        popupMenu.setOnMenuItemClickListener(item -> {
+            CharSequence title = item.getTitle();
+            if ("Edit Profile".contentEquals(title)) {
+                Intent intent = new Intent(getActivity(), ProfileDetailsActivity.class);
+                startActivity(intent);
+                return true;
+            } else if ("Logout".contentEquals(title)) {
+                FirebaseAuth.getInstance().signOut();
+                if (getActivity() != null) {
+                    Intent intent = new Intent(getActivity(), OnboardingActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    getActivity().finish();
+                }
+                return true;
+            }
+            return false;
+        });
+
+        popupMenu.show();
+    }
+
     // ------------------ LOAD PROFILE ------------------
     private void loadUserProfile() {
         FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
         if (firebaseUser == null) return;
 
         String authUid = firebaseUser.getUid();
+        final String myUid = authUid;
 
         // Decide whose profile to show
         if (openedFromMainProfile || TextUtils.isEmpty(viewedUserId)) {
@@ -305,7 +319,7 @@ public class ProfileFragment extends Fragment {
             currentUid = viewedUserId;
         }
 
-        userRef = FirebaseDatabase.getInstance()
+        DatabaseReference userRef = FirebaseDatabase.getInstance()
                 .getReference("users")
                 .child(currentUid);
 
@@ -318,9 +332,14 @@ public class ProfileFragment extends Fragment {
                 String name = snapshot.child("name").getValue(String.class);
                 String bio = snapshot.child("bio").getValue(String.class);
                 String profileImageUrl = snapshot.child("profileImageUrl").getValue(String.class);
+                String age = snapshot.child("age").getValue(String.class);
 
                 if (!TextUtils.isEmpty(name)) {
-                    tvNameAge.setText(name);
+                    String str = name;
+                    if (!TextUtils.isEmpty(age)) {
+                        str = name + ", " + age;
+                    }
+                    tvNameAge.setText(str);
                 }
                 if (!TextUtils.isEmpty(bio)) {
                     tvBio.setText(bio);
@@ -336,6 +355,43 @@ public class ProfileFragment extends Fragment {
                             .load(profileImageUrl)
                             .centerCrop()
                             .into(imgProfilePhoto);
+                }
+
+                // --- Distance calculation when viewing someone else ---
+                if (!myUid.equals(currentUid)) {
+                    Double otherLatObj = snapshot.child("latitude").getValue(Double.class);
+                    Double otherLngObj = snapshot.child("longitude").getValue(Double.class);
+
+                    if (otherLatObj != null && otherLngObj != null) {
+                        DatabaseReference myRef = FirebaseDatabase.getInstance()
+                                .getReference("users")
+                                .child(myUid);
+
+                        myRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot meSnap) {
+                                Double myLatObj = meSnap.child("latitude").getValue(Double.class);
+                                Double myLngObj = meSnap.child("longitude").getValue(Double.class);
+
+                                if (myLatObj != null && myLngObj != null && tvDistance != null) {
+                                    double distanceKm = calculateDistanceKm(
+                                            myLatObj,
+                                            myLngObj,
+                                            otherLatObj,
+                                            otherLngObj
+                                    );
+                                    tvDistance.setText(
+                                            String.format(Locale.getDefault(), "%.1f km", distanceKm)
+                                    );
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {
+                                // ignore
+                            }
+                        });
+                    }
                 }
 
                 // interests
@@ -376,7 +432,7 @@ public class ProfileFragment extends Fragment {
     private void applyInterestsToViews(@NonNull List<String> interests) {
         List<TextView> pills = Arrays.asList(
                 tvInterest1, tvInterest2, tvInterest3,
-                tvInterest4, tvInterest5, tvInterest6
+                tvInterest4, tvInterest5
         );
 
         for (int i = 0; i < pills.size(); i++) {
@@ -385,7 +441,7 @@ public class ProfileFragment extends Fragment {
                 pill.setText(interests.get(i));
                 pill.setVisibility(View.VISIBLE);
             } else {
-                pill.setVisibility(View.GONE);
+                pill.setVisibility(GONE);
             }
         }
     }
@@ -500,9 +556,26 @@ public class ProfileFragment extends Fragment {
         }
     }
 
+    // ------------------ DISTANCE UTILS ------------------
+    /**
+     * Haversine distance in km between 2 lat/lng pairs.
+     */
+    private double calculateDistanceKm(double lat1, double lon1,
+                                       double lat2, double lon2) {
+        double R = 6371.0; // Earth radius in km
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1))
+                * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
     // ------------------ UTIL ------------------
     private int dpToPx(int dp) {
-        if (getResources() == null) return dp;
+        getResources();
         float density = getResources().getDisplayMetrics().density;
         return (int) (dp * density + 0.5f);
     }

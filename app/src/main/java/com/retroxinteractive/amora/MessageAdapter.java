@@ -11,18 +11,19 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.firebase.auth.FirebaseAuth;
 
 import java.util.List;
+import java.util.Objects;
 
 public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageViewHolder> {
 
     private static final int TYPE_RIGHT = 1;
     private static final int TYPE_LEFT = 2;
 
-    private List<Message> messages;
-    private String currentUserId;
+    private final List<Message> messages;
+    private final String currentUserId;
 
     public MessageAdapter(List<Message> messages) {
         this.messages = messages;
-        currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        currentUserId = Objects.requireNonNull(FirebaseAuth.getInstance().getCurrentUser()).getUid();
     }
 
     @Override

@@ -12,7 +12,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.retroxinteractive.amora.R;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +46,8 @@ public class HomeProfileAdapter extends RecyclerView.Adapter<HomeProfileAdapter.
         UserProfile profile = profiles.get(position);
 
         // Name
-        holder.tvName.setText(profile.getName() != null ? profile.getName() : "Unknown");
+        String str = profile.getName() + ", " + profile.getAge();
+        holder.tvName.setText(str);
 
         // Bio
         if (profile.getBio() != null && !profile.getBio().isEmpty()) {
@@ -69,7 +69,8 @@ public class HomeProfileAdapter extends RecyclerView.Adapter<HomeProfileAdapter.
 
         // Match %
         if (profile.getMatchPercent() != null) {
-            holder.tvMatchPercent.setText(profile.getMatchPercent() + "%");
+            str = profile.getMatchPercent() + "%";
+            holder.tvMatchPercent.setText(str);
             holder.layoutMatch.setVisibility(View.VISIBLE);
         } else {
             holder.layoutMatch.setVisibility(View.GONE);
@@ -91,16 +92,15 @@ public class HomeProfileAdapter extends RecyclerView.Adapter<HomeProfileAdapter.
         if (profile.getPhotoUrl() != null && !profile.getPhotoUrl().isEmpty()) {
             Glide.with(context)
                     .load(profile.getPhotoUrl())
-                    .placeholder(R.drawable.ic_nav_profile)
+                    .placeholder(R.drawable.ic_profile)
                     .centerCrop()
                     .into(holder.imgProfile);
         } else {
-            holder.imgProfile.setImageResource(R.drawable.ic_nav_profile);
+            holder.imgProfile.setImageResource(R.drawable.ic_profile);
         }
 
         // Like button – (logic can be implemented later, e.g., saving to favorites)
         holder.btnLike.setOnClickListener(v -> {
-            // TODO: implement like / unlike behavior
         });
 
         // Chat button – open ChatFragment through MainActivity

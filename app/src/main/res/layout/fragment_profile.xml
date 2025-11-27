@@ -27,7 +27,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="@android:color/transparent"
-            android:contentDescription="back"
+            android:contentDescription="@string/back"
             android:src="@drawable/ic_back_button"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -39,12 +39,12 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:background="@android:color/transparent"
-            android:contentDescription="more_options"
+            android:contentDescription="@string/more_options"
             android:src="@drawable/ic_more_button"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            tools:ignore="TouchTargetSizeCheck"/>
+            tools:ignore="TouchTargetSizeCheck" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -79,7 +79,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:scaleType="centerCrop"
-                    android:src="@drawable/profile_bg" />
+                    android:src="@drawable/profile_bg"
+                    tools:ignore="ContentDescription,ImageContrastCheck" />
 
                 <androidx.constraintlayout.widget.ConstraintLayout
                     android:id="@+id/profile_header_content"
@@ -96,10 +97,10 @@
                         android:scaleType="centerCrop"
                         android:src="@drawable/profile_photo"
                         app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
                         app:layout_constraintLeft_toLeftOf="parent"
                         app:layout_constraintRight_toRightOf="parent"
-                        />
+                        app:layout_constraintStart_toStartOf="parent"
+                        tools:ignore="ContentDescription,ImageContrastCheck" />
 
 
                     <!-- NOTE: Audio container removed completely -->
@@ -131,7 +132,7 @@
                         android:id="@+id/tv_name_age"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Jade Walker, 24"
+                        android:text="@string/jade_walker_24"
                         android:textColor="#FFFFFF"
                         android:textStyle="bold"
                         android:textSize="22sp" />
@@ -141,7 +142,8 @@
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_marginStart="6dp"
-                        android:src="@drawable/ic_verified_badge" />
+                        android:src="@drawable/ic_verified_badge"
+                        tools:ignore="ContentDescription" />
 
                     <FrameLayout
                         android:id="@+id/container_distance"
@@ -149,36 +151,29 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp">
 
-                        <ImageView
-                            android:id="@+id/img_distance_bg"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:adjustViewBounds="true"
-                            android:scaleType="fitXY"
-                            android:src="@drawable/bg_distance_pill" />
-
                         <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="match_parent"
                             android:orientation="horizontal"
                             android:gravity="center_vertical"
                             android:paddingStart="10dp"
-                            android:paddingEnd="12dp">
+                            android:paddingEnd="12dp"
+                            tools:ignore="UseCompoundDrawables,UselessParent">
 
                             <ImageView
                                 android:id="@+id/img_distance_icon"
-                                android:layout_width="12dp"
+                                android:layout_width="18dp"
                                 android:layout_height="18dp"
-                                android:src="@drawable/ic_distance" />
+                                android:src="@drawable/ic_distance"
+                                tools:ignore="ContentDescription" />
 
                             <TextView
                                 android:id="@+id/tv_distance"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="6dp"
-                                android:text="0.7 km"
+                                android:text="@string/_0_7_km"
                                 android:textColor="#F7F7F7"
-                                android:textSize="12sp" />
+                                android:textSize="16sp" />
                         </LinearLayout>
                     </FrameLayout>
 
@@ -190,7 +185,7 @@
                     android:id="@+id/tv_bio_heading"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Bio"
+                    android:text="@string/bio"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     android:textSize="16sp" />
@@ -202,10 +197,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="Drawn to quiet corners of the world and vibrant city life alike, Jade finds beauty in the unexpected. She believes moments are best remembered when felt deeply — whether it’s a sketch on a napkin or a song at midnight."
+                    android:text="@string/drawn_to_quiet_corners_of_the_world_and_vibrant_city_life_alike_jade_finds_beauty_in_the_unexpected_she_believes_moments_are_best_remembered_when_felt_deeply_whether_it_s_a_sketch_on_a_napkin_or_a_song_at_midnight"
                     android:textColor="#CFCFCF"
                     android:textSize="13sp"
-                    android:lineSpacingExtra="2dp" />
+                    android:lineSpacingExtra="2dp"
+                    tools:ignore="VisualLintLongText" />
 
                 <!-- My Interest Section -->
                 <TextView
@@ -213,7 +209,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="24dp"
-                    android:text="My Interest"
+                    android:text="@string/my_interests"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"
                     android:textSize="16sp" />
@@ -235,7 +231,7 @@
                         android:paddingEnd="14dp"
                         android:paddingTop="6dp"
                         android:paddingBottom="6dp"
-                        android:text="Actress"
+                        android:text="@string/actress"
                         android:textColor="#FFFFFF"
                         android:textSize="12sp"
                         android:layout_marginEnd="8dp" />
@@ -249,7 +245,7 @@
                         android:paddingEnd="14dp"
                         android:paddingTop="6dp"
                         android:paddingBottom="6dp"
-                        android:text="Modeling"
+                        android:text="@string/modeling"
                         android:textColor="#FFFFFF"
                         android:textSize="12sp"
                         android:layout_marginEnd="8dp" />
@@ -263,7 +259,7 @@
                         android:paddingEnd="14dp"
                         android:paddingTop="6dp"
                         android:paddingBottom="6dp"
-                        android:text="Art"
+                        android:text="@string/art"
                         android:textColor="#FFFFFF"
                         android:textSize="12sp"
                         android:layout_marginEnd="8dp" />
@@ -277,7 +273,7 @@
                         android:paddingEnd="14dp"
                         android:paddingTop="6dp"
                         android:paddingBottom="6dp"
-                        android:text="Traveling"
+                        android:text="@string/traveling"
                         android:textColor="#FFFFFF"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -299,23 +295,10 @@
                         android:paddingEnd="14dp"
                         android:paddingTop="6dp"
                         android:paddingBottom="6dp"
-                        android:text="Music"
+                        android:text="@string/music"
                         android:textColor="#FFFFFF"
                         android:textSize="12sp"
                         android:layout_marginEnd="8dp" />
-
-                    <TextView
-                        android:id="@+id/tv_interest_painting"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_filter"
-                        android:paddingStart="14dp"
-                        android:paddingEnd="14dp"
-                        android:paddingTop="6dp"
-                        android:paddingBottom="6dp"
-                        android:text="Painting"
-                        android:textColor="#FFFFFF"
-                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <!-- Photos Section -->
@@ -332,19 +315,18 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Photos"
+                        android:text="@string/photos"
                         android:textColor="#FFFFFF"
                         android:textStyle="bold"
                         android:textSize="16sp" />
 
-                    <ImageButton
+                    <ImageView
                         android:id="@+id/btn_add_photo"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:background="@android:color/transparent"
-                        android:contentDescription="add_photo"
-                        android:src="@drawable/ic_more_button"
-                    android:visibility="gone" />
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:contentDescription="@string/add_photo"
+                        android:src="@drawable/add_icon"
+                        android:scaleType="fitCenter"/>
                 </LinearLayout>
 
 
@@ -365,33 +347,30 @@
     <LinearLayout
         android:id="@+id/bottom_bar"
         android:layout_width="0dp"
-        android:layout_height="88dp"
+        android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="16dp"
-        android:gravity="center_vertical"
+        android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        android:background="@drawable/nav_bar_bg">
 
         <ImageButton
             android:id="@+id/btn_like"
-            android:layout_width="150dp"
+            android:layout_width="125dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
-            android:layout_marginEnd="8dp"
             android:background="@drawable/btn_heart"
-            android:contentDescription="like" />
+            android:contentDescription="@string/btn_like_description"
+            tools:ignore="RedundantDescriptionCheck" />
 
         <ImageButton
             android:id="@+id/btn_chat"
-            android:layout_width="150dp"
+            android:layout_width="125dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="5dp"
             android:background="@drawable/btn_chat"
-            android:contentDescription="chat" />
+            android:contentDescription="@string/btn_chat_description"
+            tools:ignore="RedundantDescriptionCheck" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

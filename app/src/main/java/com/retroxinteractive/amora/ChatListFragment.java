@@ -21,21 +21,16 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 public class ChatListFragment extends Fragment {
 
-    private RecyclerView recyclerChats;
     private ChatThreadAdapter adapter;
-    private List<ChatThread> threads = new ArrayList<>();
+    private List<ChatThread> threads;
 
-    private FirebaseUser currentUser;
     private DatabaseReference userChatsRef;
 
     public ChatListFragment() {
-        // Required empty constructor
     }
 
     @Nullable
@@ -45,13 +40,16 @@ public class ChatListFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_chat_list, container, false);
 
-        currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
             Toast.makeText(requireContext(), "User not logged in", Toast.LENGTH_SHORT).show();
             return root;
         }
 
-        recyclerChats = root.findViewById(R.id.recyclerChats);
+        threads = new ArrayList<>();
+
+
+        RecyclerView recyclerChats = root.findViewById(R.id.recyclerChats);
         recyclerChats.setLayoutManager(new LinearLayoutManager(requireContext()));
         adapter = new ChatThreadAdapter(threads, thread -> {
             // open actual chat
@@ -87,12 +85,7 @@ public class ChatListFragment extends Fragment {
                 }
 
                 // Sort by lastTimestamp (descending: newest on top)
-                Collections.sort(threads, new Comparator<ChatThread>() {
-                    @Override
-                    public int compare(ChatThread o1, ChatThread o2) {
-                        return Long.compare(o2.lastTimestamp, o1.lastTimestamp);
-                    }
-                });
+                threads.sort((o1, o2) -> Long.compare(o2.lastTimestamp, o1.lastTimestamp));
 
                 adapter.notifyDataSetChanged();
             }

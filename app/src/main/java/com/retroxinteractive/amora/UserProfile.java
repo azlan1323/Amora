@@ -7,6 +7,7 @@ public class UserProfile {
     // These field names should match what you store in Realtime Database
     private String uid;
     private String name;
+    String age;
     private String bio;
     private String address;
     private String photoUrl;
@@ -22,6 +23,9 @@ public class UserProfile {
     // --- Getters & setters ---
 
     public String getAddress() { return address; }
+
+    public String getAge() { return age; }
+    public void setAge(String age) { this.age = age; }
     public void setAddress(String address) { this.address = address; }
 
     public String getUid() { return uid; }

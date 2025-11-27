@@ -38,6 +38,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.messaging.FirebaseMessaging;
 
 public class SignInActivity extends AppCompatActivity {
     private static final String TAG = "SignInActivity";
@@ -199,6 +200,8 @@ public class SignInActivity extends AppCompatActivity {
             return;
         }
 
+        refreshFcmTokenForCurrentUser();
+
         // 2. User is logged in → Now check if profile is completed
         DatabaseReference userRef = FirebaseDatabase.getInstance()
                 .getReference("users")
@@ -231,6 +234,21 @@ public class SignInActivity extends AppCompatActivity {
                 goToProfileDetails();
             }
         });
+    }
+
+    public static void refreshFcmTokenForCurrentUser() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) return;
+
+        FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) return;
+                    String token = task.getResult();
+                    FirebaseDatabase.getInstance().getReference("users")
+                            .child(user.getUid())
+                            .child("fcmToken")
+                            .setValue(token);
+                });
     }
 
     private void goToProfileDetails() {
