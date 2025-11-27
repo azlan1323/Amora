@@ -32,7 +32,6 @@ public class MainActivity extends AppCompatActivity {
 
     private View bottomNavBar;
     private static final int REQ_POST_NOTIFICATIONS = 1001;
-    private static final int REQ_IGNORE_BATTERY_OPTIMIZATIONS = 2001;
 
     private ActivityResultLauncher<Intent> batteryOptLauncher;
 

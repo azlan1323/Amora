@@ -13,3 +13,11 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firebase Functions
+functions/node_modules/
+functions/.runtimeconfig.json
+functions/firebase-debug.log
+functions/.output/
+functions/lib/
+functions/.cache/
