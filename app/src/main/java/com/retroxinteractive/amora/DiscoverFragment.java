@@ -1,7 +1,9 @@
 package com.retroxinteractive.amora;
 
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -75,6 +77,13 @@ public class DiscoverFragment extends Fragment {
         filterScroll = root.findViewById(R.id.filter_scroll);
         filterContainer = root.findViewById(R.id.filter_container);
         RecyclerView rvProfiles = root.findViewById(R.id.rv_discover_profiles);
+
+        int spacing = 16; // dp
+        int spacingPx = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                spacing,
+                getResources().getDisplayMetrics()
+        );
 
         // RecyclerView setup: 2-column grid
         rvProfiles.setLayoutManager(new GridLayoutManager(requireContext(), 2));

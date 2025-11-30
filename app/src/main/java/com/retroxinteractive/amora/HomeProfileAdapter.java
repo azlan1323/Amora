@@ -7,11 +7,16 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -99,8 +104,8 @@ public class HomeProfileAdapter extends RecyclerView.Adapter<HomeProfileAdapter.
             holder.imgProfile.setImageResource(R.drawable.ic_profile);
         }
 
-        // Like button – (logic can be implemented later, e.g., saving to favorites)
         holder.btnLike.setOnClickListener(v -> {
+            handleLikeClick(context, profile.getUid());
         });
 
         // Chat button – open ChatFragment through MainActivity
@@ -114,6 +119,55 @@ public class HomeProfileAdapter extends RecyclerView.Adapter<HomeProfileAdapter.
                 );
             }
         });
+    }
+
+    private void handleLikeClick(Context context, String otherId) {
+
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            Toast.makeText(context, "You must be logged in", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (otherId == null || otherId.equals(user.getUid())) {
+            Toast.makeText(context, "Invalid profile to like", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String myId = user.getUid();
+
+        DatabaseReference likesRef = FirebaseDatabase.getInstance()
+                .getReference("likes");
+
+        // Save: I liked them
+        likesRef.child(myId).child(otherId)
+                .setValue(true)
+                .addOnSuccessListener(unused -> {
+                    Toast.makeText(context, "You liked this profile", Toast.LENGTH_SHORT).show();
+
+                    // Check if they already liked me back
+                    likesRef.child(otherId).child(myId)
+                            .get()
+                            .addOnSuccessListener(snapshot -> {
+                                if (snapshot.exists()) {
+                                    // MATCH!!!
+                                    DatabaseReference matchRef = FirebaseDatabase.getInstance()
+                                            .getReference("matches");
+
+                                    String matchId = matchRef.push().getKey();
+                                    if (matchId != null) {
+                                        matchRef.child(matchId).setValue(true);
+                                    }
+
+                                    Toast.makeText(context, "It's a Match!", Toast.LENGTH_LONG).show();
+                                }
+                            });
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(context,
+                            "Failed to like profile: " + e.getMessage(),
+                            Toast.LENGTH_SHORT).show();
+                });
     }
 
     private void setChip(TextView chip, List<String> interests, int index) {
