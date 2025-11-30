@@ -236,7 +236,7 @@ public class ChatFragment extends Fragment {
 
     private void setupBackButton() {
         btnBack.setOnClickListener(v -> {
-            requireActivity().onBackPressed();
+            requireActivity().getOnBackPressedDispatcher().onBackPressed();
         });
     }
 
